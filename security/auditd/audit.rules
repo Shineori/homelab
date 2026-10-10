@@ -1,0 +1,27 @@
+# ── Delete existing rules on startup ──
+-D
+
+# ── Buffer size (increase if you see dropped events) ──
+-b 8192
+
+# ── LOGIN / AUTH TRACKING ──
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /var/log/auth.log -p wa -k auth_log
+-w /var/log/faillog -p wa -k auth_log
+-w /bin/su -p x -k priv_esc
+-w /usr/bin/sudo -p x -k priv_esc
+
+# ── FILE INTEGRITY MONITORING ──
+# Docker compose files
+
+
+# Terraria data
+# System-level critical files
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+-w /etc/crontab -p wa -k cron_changes
+-w /etc/sudoers -p wa -k sudoers
+
+# ── Make rules immutable (optional, requires reboot to change) ──
+ -e 2
