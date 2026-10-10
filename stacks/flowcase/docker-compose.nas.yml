@@ -1,0 +1,97 @@
+# Flowcase for the NAS (Linux). Slimmed down: no Traefik/Authentik, because your
+# existing Cloudflare Tunnel handles HTTPS. Point the tunnel at http://<NAS-IP>:8480
+#   Start:  docker compose -f docker-compose.nas.yml up -d --build
+name: flowcase
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    image: flowcaseweb/flowcase
+    container_name: flowcase-web
+    restart: unless-stopped
+    volumes:
+      - flowcase-data:/flowcase/data
+      - flowcase-nginx-data:/flowcase/nginx
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_DEBUG=0
+    networks:
+      - default_network        # becomes "flowcase_default_network" (nginx <-> workspaces)
+    command: python run.py
+
+  nginx:
+    image: nginx:1.28-alpine
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for f in /etc/nginx/conf.d/containers.d/*.conf; do
+          [ -e "$$f" ] || continue
+          h=$$(grep -o 'flowcase_generated_[A-Za-z0-9-]*' "$$f" | head -1)
+          if [ -n "$$h" ] && ! getent hosts "$$h" >/dev/null 2>&1 && ! nslookup "$$h" >/dev/null 2>&1; then
+            rm -f "$$f"; echo "Removed stale session config: $$f"
+          fi
+        done
+        exec /docker-entrypoint.sh nginx -g 'daemon off;'
+    container_name: flowcase-nginx
+    restart: unless-stopped
+    volumes:
+      - flowcase-nginx-data:/etc/nginx/conf.d
+    depends_on:
+      - web
+    ports:
+      - "8480:80"              # LAN + Cloudflare Tunnel entry point
+    networks:
+      default_network:
+      flowcase_vpn:            # reaches isolated VPN workspaces (inbound only)
+        ipv4_address: 10.77.77.3
+
+  gluetun:                     # ProtonVPN egress for workspaces on "flowcase_vpn"
+    image: qmcgaw/gluetun:latest
+    container_name: flowcase-gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv4.ip_forward=1
+    env_file:
+      - vpn.env
+    environment:
+      - FIREWALL_OUTBOUND_SUBNETS=10.77.77.0/24
+    volumes:
+      - ./gluetun/post-rules.txt:/iptables/post-rules.txt:ro
+    networks:
+      flowcase_vpn:
+        ipv4_address: 10.77.77.2
+
+  vpn-firewall:                # host firewall: VPN workspaces can't touch the NAS/LAN/containers
+    image: alpine:3.20
+    container_name: flowcase-vpn-firewall
+    restart: unless-stopped
+    network_mode: host
+    privileged: true           # needed to load br_netfilter + set its host sysctl
+    volumes:
+      - ./vpn-firewall/vpn-firewall.sh:/vpn-firewall.sh:ro
+      - /lib/modules:/lib/modules:ro
+    command: ["sh", "/vpn-firewall.sh"]
+
+networks:
+  default_network:
+    driver: bridge
+  flowcase_vpn:
+    name: flowcase_vpn
+    driver_opts:
+      com.docker.network.bridge.name: br-fcvpn   # fixed name for the host firewall
+    ipam:
+      config:
+        - subnet: 10.77.77.0/24
+          gateway: 10.77.77.1
+          ip_range: 10.77.77.128/25
+
+volumes:
+  flowcase-data:
+  flowcase-nginx-data:

@@ -1,0 +1,49 @@
+services:
+  pg:
+    image: postgres:9.5
+    container_name: ghiro-pg
+    volumes:
+      - 'ghiro-pg:/var/lib/postgresql/data'
+    environment:
+      - POSTGRES_USER=ghiro
+      - POSTGRES_DB=ghiro
+      - POSTGRES_PASSWORD=<redacted>
+#    ports:
+#      - "5432:5432"
+  mongo:
+    image: basilkh/mongodb2:latest
+    container_name: ghiro-mongo
+    volumes:
+      - 'ghiro-mongo:/data/db'
+    environment:
+      - AUTH="no"
+  ghiro:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - "TZ=America/New_York"
+    image: tornabene/ghiro:latest
+    command: ["/entrypoint.sh"]
+    environment:
+      - GHIRO_USER=ghiro
+      - GHIRO_PASSWORD=<redacted>
+    tty: true
+    stdin_open: true
+    container_name: ghiro
+    volumes:
+      - './images:/var/www/ghiro/uploads'
+      - 'ghiro-data:/var/lib/ghiro'
+    links:
+      - "pg"
+      - "mongo"
+    ports:
+      - "9991:80"
+
+volumes:
+  ghiro-mongo:
+    driver: local
+  ghiro-pg:
+    driver: local
+  ghiro-data:
+    driver: local

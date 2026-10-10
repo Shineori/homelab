@@ -1,0 +1,208 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./config/gluetun:/gluetun
+      - gluetun_tmp:/tmp/gluetun
+    environment:
+      - TZ=${TZ}
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=openvpn
+      # Put +pmp inside the .env value for PROTON_OVPN_USER if you use Proton PF
+      - OPENVPN_USER=${PROTON_OVPN_USER}
+      - OPENVPN_PASSWORD=<redacted>
+      - VPN_PORT_FORWARDING=on
+      - SERVER_COUNTRIES=United States
+      - FIREWALL_INPUT_PORTS=8701,6881,7878,8989,8686,9696,8191,6969,60597
+    ports:
+      - "8701:8701" # qB Web UI
+    # - 8700:8096   # Jellyfin
+      - "6881:6881"   # torrent port
+      - "6881:6881/udp"
+      - "7878:7878"  # Radarr
+      - "8989:8989"  # Sonarr
+      - "8686:8686"  # Lidarr
+#     - "6767:6767"  # Bazarr
+      - "9696:9696"  # Prowlarr
+      - "8191:8191"  # Flaresolverr
+      - "6969:6969"  # Whisparr
+#      - "8789:8789"  # Chaptarr
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    # FIX: Remove stale lockfile before starting to prevent qBittorrent from
+    # silently exiting on restart (it sees the lock and thinks another instance
+    # is already running).
+    entrypoint: ["/bin/sh", "-c", "rm -f /config/qBittorrent/lockfile && exec /init"]
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - WEBUI_PORT=8701
+    volumes:
+      - ./config/qbittorrent:/config
+      - /volume1/data:/data
+    restart: unless-stopped
+
+  qb_port_sync:
+    image: curlimages/curl:latest
+    container_name: qb_port_sync
+    depends_on:
+      - gluetun
+      - qbittorrent
+    volumes:
+      - gluetun_tmp:/tmp/gluetun:ro
+    environment:
+      - QBIT_HOST=gluetun
+      - QBIT_WEBUI_PORT=8701
+      - QBIT_USER=${QBIT_USER}
+      - QBIT_PASS=<redacted>
+    # FIX: Removed 'set -e' so curl failures no longer crash the container.
+    # The script now logs the error and retries on the next 30s cycle instead
+    # of exiting and triggering an infinite restart loop.
+    command: >
+      sh -c '
+        set -u;
+        COOKIE=/tmp/qb.cookie;
+        last="";
+        echo "[qb_port_sync] started";
+        while true; do
+          PORT="$$(cat /tmp/gluetun/forwarded_port 2>/dev/null || true)";
+          if [ -n "$$PORT" ] && [ "$$PORT" != "$$last" ]; then
+            echo "[qb_port_sync] new forwarded port: $$PORT";
+            rm -f "$$COOKIE";
+
+            if ! curl -fsS -c "$$COOKIE" -b "$$COOKIE" \
+              -d "username=$${QBIT_USER}&password=$${QBIT_PASS}" \
+              "http://$${QBIT_HOST}:$${QBIT_WEBUI_PORT}/api/v2/auth/login" >/dev/null; then
+              echo "[qb_port_sync] login failed, will retry in 30s";
+              sleep 30;
+              continue;
+            fi;
+
+            if ! curl -fsS -b "$$COOKIE" \
+              --data-urlencode "json={\"listen_port\":$$PORT,\"random_port\":false}" \
+              "http://$${QBIT_HOST}:$${QBIT_WEBUI_PORT}/api/v2/app/setPreferences" >/dev/null; then
+              echo "[qb_port_sync] setPreferences failed, will retry in 30s";
+              sleep 30;
+              continue;
+            fi;
+
+            last="$$PORT";
+            echo "[qb_port_sync] port updated successfully to $$PORT";
+          fi;
+          sleep 30;
+        done
+      '
+    restart: unless-stopped
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - TZ=${TZ}
+    restart: unless-stopped
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ./config/prowlarr:/config
+#    ports:
+#      - 9696:9696   # changed to avoid "port already allocated" on NAS
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ./config/sonarr:/config
+      - /volume1/data:/data
+#    ports:
+#      - 8989:8989
+    restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ./config/radarr:/config
+      - /volume1/data:/data
+#    ports:
+#      - 7878:7878
+    restart: unless-stopped
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ./config/lidarr:/config
+      - /volume1/data:/data
+#    ports:
+#      - 8686:8686
+    restart: unless-stopped
+
+  jellyseerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=America/New_York
+      - PORT=5055
+    ports:
+      - "5055:5055"
+    volumes:
+      # FIX: was ./config which pointed at the root config folder shared by all
+      # arr services. Now has its own dedicated subdirectory.
+      - ./config/jellyseerr:/app/config
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5055/api/v1/status"]
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  gluetun_tmp:

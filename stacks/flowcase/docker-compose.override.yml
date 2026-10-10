@@ -1,0 +1,8 @@
+# Windows / Docker Desktop fix: drop Linux-only host file mounts from Traefik
+services:
+  traefik:
+    volumes: !override
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/dynamic_configs:/dynamic_configs:ro
+      - acme_data:/acme
+    environment: !reset {}

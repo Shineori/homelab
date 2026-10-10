@@ -1,0 +1,20 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: my-anonymouse-qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - WEBUI_PORT=8089       # qB WebUI listens on this port INSIDE the container
+      - TORRENTING_PORT=6882  # qB torrent traffic uses this port INSIDE the container
+    volumes:
+      - ./config:/config      # qB settings, logs, BT_backup
+      - ./downloads:/downloads # actual downloaded files
+    ports:
+      - 8089:8089             # host:container, matches WEBUI_PORT
+      - 51820:51820             # TCP torrenting, matches TORRENTING_PORT
+      - 51820:51820/udp         # UDP torrenting (DHT, uTP)
+    stop_grace_period: "10s"
+    restart: unless-stopped
+

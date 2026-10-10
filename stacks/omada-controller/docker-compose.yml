@@ -1,0 +1,27 @@
+services:
+  omada-controller:
+    container_name: omada-controller
+    image: mbentley/omada-controller:5.15
+    restart: unless-stopped
+    network_mode: host
+#    ports:
+#      - "8088:8088"   # HTTP portal (optional)
+#      - "8043:8043"   # HTTPS portal (main UI)
+#      - "8843:8843"   # HTTPS guest portal (optional)
+#      - "29810:29810/udp" # discovery
+#      - "29811:29811"     # management
+#      - "29812:29812"     # adoption
+#      - "29813:29813"     # inform
+#      - "29814:29814"     # transfer
+    stop_grace_period: 60s
+    environment:
+      - TZ=America/New_York
+      - SHOW_SERVER_LOGS=true
+      - SHOW_MONGODB_LOGS=true
+    volumes:
+      - ./omada-data:/opt/tplink/EAPController/data
+      - ./omada-logs:/opt/tplink/EAPController/logs
+
+volumes:
+  omada-data:
+  omada-logs:

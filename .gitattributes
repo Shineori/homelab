@@ -1,0 +1,13 @@
+* text=auto
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# show docs + compose configs in GitHub's language bar (hidden by default)
+*.md linguist-detectable=true
+*.yml linguist-detectable=true
+*.yaml linguist-detectable=true
+# GitHub hides docs/ and READMEs as 'documentation' by default; count them
+*.md linguist-documentation=false
+docs/** linguist-documentation=false

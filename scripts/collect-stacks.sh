@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# collect-stacks.sh: copy compose files from a server into this repo, REDACTED for a public repo.
+# Run ON the server, from the repo root:   ./scripts/collect-stacks.sh ~/docker
+#   - copies each mapped stack's compose file
+#   - auto-redacts secret-looking values, tunnel tokens, webhooks, emails, LAN IPs
+#   - turns .env into .env.example with ALL values blanked
+#   - never copies data folders
+# Auto-redaction is a safety net, NOT a guarantee. Always review + run gitleaks.
+set -euo pipefail
+
+SRC="${1:-$HOME/docker}"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+
+# repo-folder:server-folder   (edit if your folder names differ)
+MAP=(
+  authentik:authentik  vaultwarden:vaultwarden  cloudflared:cloudflared
+  omada-controller:omada  homarr:homarr  jellyfin:jellyfin  immich:immich
+  arr-stack:arr-stack  qbittorrent-mam:qbittorrent  dawarich:dawarich
+  audiobookshelf:AudioBookShelf  paperless:paperless  karakeep:karakeep  uptime-kuma:uptime-kuma
+  flowcase:Flowcase  ghiro:ghiro-docker  terraria:terraria
+  minecraft:minecraft  ollama-stack:ollama-stack  resume-site:resume-site
+)
+
+# your own domain(s): every host under these becomes <redacted-domain>
+PRIVATE_DOMAINS='shineori\.me'
+
+SECRET_KEYS='[A-Za-z0-9_]*(PASS|PASSWORD|PASSWD|TOKEN|SECRET|PRIVATE|API_?KEY|AUTH_KEY|WEBHOOK|CLIENT_ID|SMTP_USER|LICENSE|SALT|ENCRYPTION|ADMIN_USER|ADMIN_EMAIL|ADMIN_NAME)[A-Za-z0-9_]*'
+
+redact() {
+  sed -E \
+    -e "s/^([[:space:]]*-?[[:space:]]*\"?)(${SECRET_KEYS})([[:space:]]*[:=][[:space:]]*).+/\1\2\4<redacted>/I" \
+    -e 's/(--token[ =])[^ "]+/\1<redacted>/g' \
+    -e 's#https://(discord(app)?\.com)/api/webhooks/[^ "]+#https://\1/api/webhooks/<redacted>#g' \
+    -e 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<redacted-email>/g' \
+    -e 's/192\.168\.[0-9]+\.[0-9]+/<LAN_IP>/g' \
+    -E -e "s/([A-Za-z0-9-]+\.)*(${PRIVATE_DOMAINS})/<redacted-domain>/g"
+}
+
+for pair in "${MAP[@]}"; do
+  dest="${pair%%:*}"; src="$SRC/${pair##*:}"
+  [ -d "$src" ] || { echo "skip  $dest  (no $src on this machine)"; continue; }
+  mkdir -p "$REPO/stacks/$dest"
+  found=0
+  for f in docker-compose.yml docker-compose.yaml compose.yml compose.yaml; do
+    if [ -f "$src/$f" ]; then
+      redact < "$src/$f" > "$REPO/stacks/$dest/docker-compose.yml"; found=1; break
+    fi
+  done
+  # Flowcase is an upstream clone: our real config is the override files
+  if [ "$dest" = flowcase ]; then
+    for f in docker-compose.nas.yml docker-compose-vpn.yml docker-compose-authentik.yml docker-compose.override.yml; do
+      [ -f "$src/$f" ] && redact < "$src/$f" > "$REPO/stacks/$dest/$f"
+    done
+    rm -f "$REPO/stacks/$dest/docker-compose.yml"   # stock upstream file, not ours
+    found=1
+  fi
+  # every env file (.env, tunnel.env, vpn.env) -> *.example with values blanked
+  for e in "$src"/.env "$src"/*.env; do
+    [ -f "$e" ] || continue
+    name="$(basename "$e")"
+    sed -E 's/^([[:space:]]*[A-Za-z_][A-Za-z0-9_]*)=.*/\1=/' "$e" > "$REPO/stacks/$dest/${name}.example"
+  done
+  [ $found = 1 ] && echo "ok    $dest  <-  $src" || echo "WARN  $dest  (folder exists but no compose file)"
+done
+
+echo
+echo "Next:  1) git diff            (read every line)"
+echo "       2) grep -rniE 'password|token|secret|key|@' stacks/"
+echo "       3) gitleaks detect --source . -v"

@@ -1,0 +1,33 @@
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      start_period: 30s   # ← give it 30s before health checks start
+      interval: 15s
+    container_name: jellyfin
+    environment:
+      - PUID=1000           # match your media user
+      - PGID=100           # match your media group
+      - TZ=America/New_York
+      - JELLYFIN_PublishedServerUrl=<LAN_IP>   # optional
+    # 👇 NEW: grant the container membership in the "render" group (GID 105 on
+    # ShiNAS) so it can access the Intel GPU for transcoding.
+    group_add:
+      - "105"
+    # 👇 NEW: pass the Intel GPU (Quick Sync) through to the container.
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - ./.config:/config
+      - ./cache:/cache
+      - /volume1/data/media/movies:/data/movies
+      - /volume1/data/media/tv:/data/tv
+      - /volume1/data/media/music:/data/music
+    dns:
+      - 1.1.1.1   # Cloudflare
+      - 8.8.8.8   # Google
+    ports:
+      - 8096:8096           # HTTP
+      - 8920:8920         # HTTPS if you enable it
+    restart: unless-stopped

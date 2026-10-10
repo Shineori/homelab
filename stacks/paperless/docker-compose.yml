@@ -1,0 +1,28 @@
+services:
+  broker:
+    image: redis:7
+    container_name: paperless-redis
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    restart: unless-stopped
+    depends_on:
+      - broker
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/usr/src/paperless/data        # database + index
+      - ./media:/usr/src/paperless/media      # your actual documents
+      - ./export:/usr/src/paperless/export    # backup exports land here
+      - ./consume:/usr/src/paperless/consume  # the magic inbox folder
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_SECRET_KEY: <redacted>
+      PAPERLESS_TIME_ZONE: America/New_York   # set yours
+      PAPERLESS_OCR_LANGUAGE: eng
+      PAPERLESS_ADMIN_USER: <redacted>
+      PAPERLESS_ADMIN_PASSWORD: <redacted>

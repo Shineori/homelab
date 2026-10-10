@@ -1,0 +1,21 @@
+# Terminal resume site: NGINX serving static files, published via Cloudflare Tunnel
+# Lives on ShiNAS at ~/docker/resume-site/
+services:
+  resume-site:
+    # "unprivileged" NGINX runs as a normal user (not root) and listens on 8080
+    image: nginxinc/nginx-unprivileged:stable-alpine
+    container_name: resume-site
+    restart: unless-stopped
+    ports:
+      - "8088:8080"            # host port 8088 → container 8080 (change 8088 if it's taken)
+    volumes:
+      - ./site:/usr/share/nginx/html:ro              # your website files, read-only
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # 🔒 hardening: even if something went wrong, the container can't do much
+    read_only: true            # container filesystem is read-only
+    tmpfs:
+      - /tmp                   # NGINX needs one writable spot for its pid + cache
+    cap_drop:
+      - ALL                    # drop every Linux capability
+    security_opt:
+      - no-new-privileges:true # nothing inside can escalate privileges

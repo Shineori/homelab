@@ -1,0 +1,42 @@
+# --- secrets: NEVER commit ---
+.env
+*.env
+!.env.example
+*.key
+*.pem
+*.crt
+*secret*
+*token*
+credentials*
+cert.json
+config.yml.bak
+
+# --- dumps, backups, logs ---
+*.sql
+*.sql.gz
+*.bak
+*.log
+
+# --- app data / volumes ---
+data/
+config/
+db/
+database/
+postgres*/
+library/
+media/
+logs/
+*.db
+*.sqlite*
+
+# --- game saves ---
+*.wld
+*.twld
+world/
+saves/
+
+# --- mkdocs build ---
+site/
+
+# --- un-ignore our own files caught by the patterns above ---
+!.github/workflows/secret-scan.yml

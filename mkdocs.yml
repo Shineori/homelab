@@ -1,0 +1,67 @@
+site_name: Hasaam's Homelab
+site_url: https://shineori.github.io/homelab/
+repo_url: https://github.com/shineori/homelab
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: teal
+  features:
+    - navigation.sections
+    - navigation.instant
+    - search.highlight
+    - content.code.copy
+markdown_extensions:
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+nav:
+  - Home: index.md
+  - Infrastructure:
+      - Hardware: infrastructure/hardware.md
+      - Network: infrastructure/network.md
+      - Single sign-on: infrastructure/sso.md
+      - Backups: infrastructure/backups.md
+      - Alerting: infrastructure/alerting.md
+  - Sanitization checklist: sanitization.md
+  - Services:
+      - Security & identity:
+          - "Authentik": services/authentik.md
+          - "Vaultwarden": services/vaultwarden.md
+          - "auditd + Discord alerts": services/security-monitoring.md
+      - Networking & monitoring:
+          - "Cloudflare Tunnel": services/cloudflared.md
+          - "Omada Controller": services/omada-controller.md
+          - "Homarr": services/homarr.md
+          - "Uptime Kuma": services/uptime-kuma.md
+      - Media:
+          - "Jellyfin": services/jellyfin.md
+          - "Immich": services/immich.md
+          - "*arr stack": services/arr-stack.md
+          - "qBittorrent (standalone)": services/qbittorrent-mam.md
+          - "Audiobookshelf": services/audiobookshelf.md
+      - Apps:
+          - "Dawarich": services/dawarich.md
+          - "Flowcase": services/flowcase.md
+          - "Ghiro": services/ghiro.md
+          - "Paperless-ngx": services/paperless.md
+          - "Karakeep": services/karakeep.md
+      - Game servers:
+          - "Terraria (tModLoader)": services/terraria.md
+          - "Minecraft + playit": services/minecraft.md
+          - "The Forest dedicated server": services/the-forest.md
+      - AI:
+          - "Ollama + Open WebUI + SearXNG": services/ollama-stack.md
+          - "Hermes Agent": services/hermes-agent.md
+      - Security labs:
+          - "Pentesting lab": services/pentest-lab.md
+          - "OPNsense router lab": services/opnsense-lab.md
+          - "EVE-NG": services/eve-ng.md
+      - Web:
+          - "Terminal resume site": services/resume-site.md
