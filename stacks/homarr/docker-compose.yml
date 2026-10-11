@@ -1,7 +1,7 @@
 services:
   hommarr:
     container_name: homarr
-    image: ghcr.io/homarr-labs/homarr:latest
+    image: ghcr.io/homarr-labs/homarr:latest@sha256:b65975397d0900914d4147764ff4979a164ccb2b61bb93515983f8bdcafd3413
     restart: unless-stopped
     volumes:
       - ./appdata:/appdata

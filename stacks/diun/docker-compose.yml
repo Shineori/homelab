@@ -1,0 +1,28 @@
+services:
+  diun:
+    image: crazymax/diun:4.33.0
+    container_name: diun
+    hostname: shinas                 # shows in notifications, so you know which server
+    command: serve
+    restart: unless-stopped
+    env_file:
+      - .env                         # Discord webhook lives here (root-only, never in git)
+    environment:
+      TZ: America/New_York
+      LOG_LEVEL: info
+      DIUN_WATCH_SCHEDULE: "0 */6 * * *"      # every 6 hours
+      DIUN_WATCH_JITTER: "30s"
+      DIUN_WATCH_FIRSTCHECKNOTIF: "false"     # no flood on the first scan
+      DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
+      DIUN_DEFAULTS_WATCHREPO: "true"         # look for NEW tags, not just changed ones
+      DIUN_DEFAULTS_NOTIFYON: "new"
+      DIUN_DEFAULTS_SORTTAGS: "semver"
+      DIUN_DEFAULTS_MAXTAGS: "10"
+      DIUN_DEFAULTS_INCLUDETAGS: '^v?\d+\.\d+\.\d+'                  # real version numbers only
+      DIUN_DEFAULTS_EXCLUDETAGS: '(?i)(rc|beta|alpha|dev|nightly|pre)' # skip pre-releases
+    volumes:
+      - ./data:/data
+      # NOTE: ':ro' stops the socket file being replaced, but does NOT limit the Docker API.
+      # Hardening TODO: put a read-only docker-socket-proxy in front of it.
+      - /var/run/docker.sock:/var/run/docker.sock:ro

@@ -73,7 +73,8 @@ Encryption and decryption happen **on my devices**. Vaultwarden only ever stores
 
 ## What I'd harden next
 
-- [ ] **Pin the image version** instead of `:latest`, and upgrade deliberately after reading the release notes (same approach as Authentik)
+- [x] **Pinned the image version** ✅ *Done:* `1.37.3` instead of `:latest`, verified identical to the running image. [Diun](diun.md) announces new releases in Discord.
+- [ ] **The NAS's network share can read root-only files.** While syncing configs, my collector (connecting over the share) could read this `chmod 600 root` `.env`, so whatever account the share uses bypasses those permissions. Fix: scope the share to a non-admin account, or exclude secret files from it.
 - [ ] **Automated, encrypted, off-NAS backups of `vw-data/`.** It's the most important data in the lab, because losing it means losing every login.
 - [ ] **Keep an offline emergency kit:** master password plus the 2FA recovery code for my vault account, stored on paper somewhere safe
 - [ ] Check the brute-force protections on the login endpoint, and alert on failed logins

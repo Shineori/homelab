@@ -58,6 +58,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | [Cloudflare Tunnel](docs/services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
 | [Omada Controller](docs/services/omada-controller.md) | ShiNAS | 🟢 | Manages TP-Link Omada network gear |
 | [Homarr](docs/services/homarr.md) | ShiNAS | 🟢 | Dashboard / home screen for every service |
+| [Diun](docs/services/diun.md) | ShiNAS | 🟢 | Watches every container image and pings Discord when a new stable version ships |
 | [Uptime Kuma](docs/services/uptime-kuma.md) | ShiNAS | 🟢 | Uptime monitoring and alerts for every service |
 
 ### Media

@@ -39,6 +39,7 @@ nav:
           - "Cloudflare Tunnel": services/cloudflared.md
           - "Omada Controller": services/omada-controller.md
           - "Homarr": services/homarr.md
+          - "Diun": services/diun.md
           - "Uptime Kuma": services/uptime-kuma.md
       - Media:
           - "Jellyfin": services/jellyfin.md

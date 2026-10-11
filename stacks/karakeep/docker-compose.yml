@@ -14,6 +14,8 @@ services:
       DATA_DIR: /data # DON'T CHANGE THIS
   chrome:
     image: gcr.io/zenika-hub/alpine-chrome:124
+    labels:
+      - "diun.enable=false"
     restart: unless-stopped
     command:
       - --no-sandbox

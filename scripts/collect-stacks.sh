@@ -18,7 +18,7 @@ MAP=(
   arr-stack:arr-stack  qbittorrent-mam:qbittorrent  dawarich:dawarich
   audiobookshelf:AudioBookShelf  paperless:paperless  karakeep:karakeep  uptime-kuma:uptime-kuma
   flowcase:Flowcase  ghiro:ghiro-docker  terraria:terraria
-  minecraft:minecraft  ollama-stack:ollama-stack  resume-site:resume-site
+  minecraft:minecraft  ollama-stack:ollama-stack  resume-site:resume-site  diun:diun
 )
 
 # your own domain(s): every host under these becomes <redacted-domain>
