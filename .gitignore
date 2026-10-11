@@ -1,4 +1,5 @@
 # --- secrets: NEVER commit ---
+*.local
 .env
 *.env
 !.env.example

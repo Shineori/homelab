@@ -21,8 +21,15 @@ MAP=(
   minecraft:minecraft  ollama-stack:ollama-stack  resume-site:resume-site  diun:diun
 )
 
-# your own domain(s): every host under these becomes <redacted-domain>
-PRIVATE_DOMAINS='shineori\.me'
+# Your own domain(s) as one regex: every host under them becomes <redacted-domain>.
+# The list is kept OUT of this public repo, in a git-ignored file next to this script:
+#   echo 'yourdomain\.(me|com)' > scripts/private-domains.local
+DOMAINS_FILE="$REPO/scripts/private-domains.local"
+PRIVATE_DOMAINS="$(tr -d '[:space:]' 2>/dev/null < "$DOMAINS_FILE" || true)"
+if [ -z "$PRIVATE_DOMAINS" ]; then
+  echo "ERROR: $DOMAINS_FILE is missing or empty. Refusing to run without domain redaction." >&2
+  exit 1
+fi
 
 SECRET_KEYS='[A-Za-z0-9_]*(PASS|PASSWORD|PASSWD|TOKEN|SECRET|PRIVATE|API_?KEY|AUTH_KEY|WEBHOOK|CLIENT_ID|SMTP_USER|LICENSE|SALT|ENCRYPTION|ADMIN_USER|ADMIN_EMAIL|ADMIN_NAME)[A-Za-z0-9_]*'
 
