@@ -86,11 +86,12 @@ I also removed the socket from [Authentik's worker](authentik.md) entirely, sinc
 | Problem | Root cause | Fix |
 |---|---|---|
 | `403 Forbidden` listing tags for Karakeep's headless-Chrome image | That image lives on a Google registry that doesn't allow anonymous tag listing | Added the label `diun.enable=false` to that one service. It's pinned (`124`) and rarely updated. |
+| Later, the same image **couldn't be downloaded at all** when I moved Karakeep to my second server | The Google registry project hosting it stopped serving downloads ("billing must be enabled"). It only kept working where it was already downloaded. | Switched to the same image on Docker Hub (`docker.io/zenika/alpine-chrome:124`). Lesson: an image that runs fine today can become impossible to download again. |
 
 ## What I'd harden next
 
 - [x] **Put a docker-socket-proxy in front of the Docker socket** ✅ *Done (see below).*
-- [ ] Add Diun to my second server (ShineoriServer) too
+- [ ] Add Diun to my second server (ShineoriServer) too. **More important now:** six services moved there, and this Diun only watches the NAS
 - [ ] A monthly "update day": work through the Discord notifications, read the release notes, and bump the pins
 
 ## What I learned

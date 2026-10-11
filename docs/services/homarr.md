@@ -4,12 +4,14 @@
 
 | | |
 |---|---|
-| **Host** | ShiNAS |
+| **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | LAN only |
 
 Compose file: [`stacks/homarr/`](https://github.com/shineori/homelab/tree/main/stacks/homarr)
+
+> 🚚 **Moved from ShiNAS to ShineoriServer** in October 2026 to free up RAM on the NAS. Full story: [Moving services off the NAS](../infrastructure/migration.md).
 
 ## Why I run it
 

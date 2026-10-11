@@ -29,7 +29,7 @@ flowchart LR
     tun --> srv[immich-server<br/>API + web UI]
     srv --> db[(PostgreSQL<br/>+ vector search)]
     srv --> redis[(Valkey<br/>job queue)]
-    srv --> ml[machine-learning<br/>faces · smart search]
+    srv -- LAN --> ml[machine-learning<br/>on ShineoriServer]
     srv --> files[(Photo library<br/>on NAS storage)]
     srv -. OIDC login .-> ak[Authentik]
 ```
@@ -37,7 +37,7 @@ flowchart LR
 | Container | Job |
 |---|---|
 | `immich-server` | The API and web interface. Receives uploads and runs background jobs (thumbnails, video transcoding, metadata). |
-| `immich-machine-learning` | Runs the models for **face recognition** and **smart search** (searching photos by describing them) |
+| `immich-machine-learning` | Runs the models for **face recognition** and **smart search** (searching photos by describing them). Now runs on my second server, ShineoriServer (see below). |
 | `database` | PostgreSQL with **vector search** extensions, which store the "meaning" of each photo as numbers so smart search can find matches |
 | `redis` (Valkey) | Job queue that coordinates the background work |
 
@@ -70,6 +70,21 @@ Inside Immich, **Administration → Settings → Job Settings** has the concurre
 
 The limits only slow Immich's background jobs down. Uploads, browsing and search keep working, and a big backlog just takes longer to finish instead of taking the whole NAS down with it (see the troubleshooting log).
 
+### Update: machine learning moved to ShineoriServer
+
+The limits stopped the overload, but on a 7.5 GB NAS even a capped ML container can still take 2 GB during big jobs. Immich lets the ML part run on **a different machine**, so it now runs on my laptop server (31 GB of RAM). The photos, the database and the Immich server all stay on the NAS:
+
+```
+Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (ShineoriServer)
+  photos + database stay here                  processes images, stores only model files
+```
+
+- **On the laptop:** [`stacks/immich-ml/`](https://github.com/shineori/homelab/tree/main/stacks/immich-ml) runs the same version tag as the server (`v3.3.1`), bound to the laptop's LAN IP only
+- **In Immich:** Administration → Settings → Machine Learning points at the laptop
+- **On the NAS:** the ML service keeps its limits but sits behind `profiles: ["local-ml"]`, so it doesn't start unless I ask for it. Rolling back is one line.
+- **Version lock:** when Diun reports a new Immich release, I bump the tag on **both** machines
+- **If the laptop is off,** smart search and face detection pause and catch up later. Uploads, browsing and backups keep working.
+
 ## Setup notes
 
 1. Download the release's `docker-compose.yml` and `.env` (Immich asks you to use the files from the current release, not the main branch)
@@ -85,6 +100,7 @@ The limits only slow Immich's background jobs down. Uploads, browsing and search
 | Problem | Root cause | Fix |
 |---|---|---|
 | **Uptime Kuma showed "Cannot connect to the socket server"**, and every app on the NAS was slow or timing out | The whole NAS was overloaded, not just Uptime Kuma: load average **36**, swap **5.1 of 5.7 GB** used, and up to **63% iowait** (the CPU waiting on the disk). `docker stats` showed `immich_server` at **183%** CPU and `immich_machine_learning` at **152%**, most likely from Immich reprocessing the library after my upgrade to v3. With no limits, the ML container grabbed RAM until the NAS was swapping to disk, and the disk became the bottleneck for every app. | **Confirmed the cause first:** stopping only the ML container dropped the load from 36 to 13 within minutes, and every app answered again. **Then fixed it for good:** added `mem_limit: 2g` and `cpus: 1.5` to the ML container. After the restart the load settled at **1.75**, with the ML container capped at 2 GiB. Also dropped the heavy jobs' concurrency to 1 in Immich's Job Settings. |
+| After adding `profiles: ["local-ml"]`, the NAS's ML container kept running | `docker compose up -d --remove-orphans` doesn't remove containers of profile-disabled services, because they're still part of the project | Stopped and removed it by hand once (`docker stop` + `docker rm`). With the profile set, it doesn't come back. |
 
 ```
             BEFORE (no limits)             AFTER (capped)
@@ -103,7 +119,9 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 - [ ] Get Uptime Kuma alerting on NAS load or swap, so I see the next overload coming instead of finding out from timeouts
 - [ ] Finish 3-2-1: replicate to my second server, then an encrypted off-site copy
 - [ ] Decide whether to turn off password login once SSO has proven reliable
-- [ ] Hardware acceleration for transcoding and machine learning, if the NAS supports it
+- [x] **Moved machine learning off the NAS** ✅ *Done:* it runs on ShineoriServer now (see Resource limits)
+- [ ] GPU acceleration for machine learning: ShineoriServer has an RTX 2060, so the `-cuda` image should make face detection and smart search much faster
+- [ ] Hardware acceleration for video transcoding on the NAS, if it supports it
 
 ## What I learned
 
@@ -114,3 +132,4 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 - **Symptoms aren't causes:** the alert came from Uptime Kuma, but the problem was Immich. Load, swap, iowait and `docker stats` led from "one app is broken" to "one container is starving the whole server".
 - **Prove the cause before the fix:** stopping just the suspected container and watching the load fall confirmed it, so the permanent fix was aimed at the right thing
 - **Resource limits are a shared-host courtesy:** on a box with limited RAM, one unbounded container can turn into everyone's outage
+- **Run each piece where its resource is cheap:** machine learning needs RAM and CPU but no storage, while the photo server needs storage but little RAM. Splitting them across two machines fixed the problem for good.

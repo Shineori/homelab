@@ -1,24 +1,37 @@
 #!/usr/bin/env bash
 # collect-stacks.sh: copy compose files from a server into this repo, REDACTED for a public repo.
-# Run ON the server, from the repo root:   ./scripts/collect-stacks.sh ~/docker
-#   - copies each mapped stack's compose file
+# Run from the repo root, once per host:
+#   ./scripts/collect-stacks.sh nas    ~/docker      (ShiNAS)
+#   ./scripts/collect-stacks.sh laptop ~/docker      (ShineoriServer)
+#   - copies the compose file of each stack that lives on THAT host (see MAP)
 #   - auto-redacts secret-looking values, tunnel tokens, webhooks, emails, LAN IPs
 #   - turns .env into .env.example with ALL values blanked
 #   - never copies data folders
 # Auto-redaction is a safety net, NOT a guarantee. Always review + run gitleaks.
 set -euo pipefail
 
-SRC="${1:-$HOME/docker}"
+HOST="${1:-}"
+SRC="${2:-$HOME/docker}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
+case "$HOST" in
+  nas|laptop) ;;
+  *) echo "usage: $0 <nas|laptop> [docker-folder]" >&2; exit 1 ;;
+esac
 
-# repo-folder:server-folder   (edit if your folder names differ)
+# host:repo-folder:server-folder   (edit when a stack moves, or if folder names differ)
+# A stack is only collected from the host it lives on, so old rollback copies
+# left behind on another machine never overwrite the real one.
 MAP=(
-  authentik:authentik  vaultwarden:vaultwarden  cloudflared:cloudflared
-  omada-controller:omada  homarr:homarr  jellyfin:jellyfin  immich:immich
-  arr-stack:arr-stack  qbittorrent-mam:qbittorrent  dawarich:dawarich
-  audiobookshelf:AudioBookShelf  paperless:paperless  karakeep:karakeep  uptime-kuma:uptime-kuma
-  flowcase:Flowcase  ghiro:ghiro-docker  terraria:terraria
-  minecraft:minecraft  ollama-stack:ollama-stack  resume-site:resume-site  diun:diun
+  # ShiNAS: storage-heavy apps and identity
+  nas:authentik:authentik  nas:vaultwarden:vaultwarden  nas:cloudflared:cloudflared
+  nas:omada-controller:omada  nas:jellyfin:jellyfin  nas:immich:immich
+  nas:arr-stack:arr-stack  nas:qbittorrent-mam:qbittorrent
+  nas:audiobookshelf:AudioBookShelf  nas:paperless:paperless  nas:flowcase:Flowcase
+  nas:terraria:terraria  nas:resume-site:resume-site  nas:diun:diun
+  # ShineoriServer: RAM-hungry apps with small data (moved off the NAS)
+  laptop:immich-ml:immich-ml  laptop:uptime-kuma:uptime-kuma  laptop:homarr:homarr
+  laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
+  laptop:minecraft:minecraft  laptop:ollama-stack:ollama-stack
 )
 
 # Your own domain(s) as one regex: every host under them becomes <redacted-domain>.
@@ -43,7 +56,9 @@ redact() {
     -E -e "s/([A-Za-z0-9-]+\.)*(${PRIVATE_DOMAINS})/<redacted-domain>/g"
 }
 
-for pair in "${MAP[@]}"; do
+for entry in "${MAP[@]}"; do
+  [ "${entry%%:*}" = "$HOST" ] || continue
+  pair="${entry#*:}"
   dest="${pair%%:*}"; src="$SRC/${pair##*:}"
   [ -d "$src" ] || { echo "skip  $dest  (no $src on this machine)"; continue; }
   mkdir -p "$REPO/stacks/$dest"

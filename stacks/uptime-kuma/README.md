@@ -2,7 +2,7 @@
 
 Docs: [`docs/services/uptime-kuma.md`](../../docs/services/uptime-kuma.md)
 
-Source on the server: `~/docker/uptime-kuma` (ShiNAS)
+Source on the server: `~/docker/uptime-kuma` (ShineoriServer)
 
 Files here:
 - `docker-compose.yml` (copied by `scripts/collect-stacks.sh`)

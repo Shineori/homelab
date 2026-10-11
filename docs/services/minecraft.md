@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Game servers |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | playit.gg tunnel (no open ports, home IP hidden) |
 
 Compose file: [`stacks/minecraft/`](https://github.com/shineori/homelab/tree/main/stacks/minecraft)
 

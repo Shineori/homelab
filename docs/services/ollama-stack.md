@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | AI |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | Open WebUI through Cloudflare Tunnel (usually spun down); SearXNG LAN only, with its traffic leaving through ProtonVPN |
 
 Compose file: [`stacks/ollama-stack/`](https://github.com/shineori/homelab/tree/main/stacks/ollama-stack)
 

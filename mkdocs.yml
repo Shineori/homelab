@@ -29,6 +29,7 @@ nav:
       - Single sign-on: infrastructure/sso.md
       - Backups: infrastructure/backups.md
       - Alerting: infrastructure/alerting.md
+      - "Moving services off the NAS": infrastructure/migration.md
   - Sanitization checklist: sanitization.md
   - Services:
       - Security & identity:

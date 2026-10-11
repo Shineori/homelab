@@ -160,5 +160,6 @@ The backup includes the database, `rsa_key*` (without it, existing logins break)
 - [x] **Copy 2:** encrypted restic repository on a **separate physical disk** (survives a dead drive or a bad command)
 - [ ] **Copy 3, separate device:** replicate the repository to my second server, so the backups survive the whole NAS dying
 - [ ] **Off-site:** encrypted copy to cloud storage, so the backups survive fire, theft or ransomware on the home network
+- [ ] **Back up ShineoriServer too:** Dawarich, Karakeep, Uptime Kuma and Homarr now live on the laptop, which this nightly run doesn't cover yet ([migration notes](migration.md))
 - [ ] **Dead-man's switch:** an Uptime Kuma push monitor that alerts if a night's backup *doesn't run at all* (the Discord trap only catches runs that start and then fail)
 - [ ] Quarterly restore drill

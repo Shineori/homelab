@@ -29,7 +29,7 @@ flowchart LR
     edge --> tun[[Outbound tunnel]]
     tun --> cfd[cloudflared<br/>on ShiNAS]
     cfd --> apps[Web apps on ShiNAS]
-    cfd --> ai[Open WebUI<br/>on ShineoriServer]
+    cfd --> ai[Open WebUI, Dawarich, Karakeep<br/>on ShineoriServer]
     edge -. unknown hostname .-> x[404 catch-all]
 ```
 
@@ -40,8 +40,10 @@ flowchart LR
 | NAS admin panel | ShiNAS | 🔐 **Cloudflare Access → Authentik passkey**, then the NAS login |
 | Authentik (the SSO itself) | ShiNAS | Passkey login (deliberately *not* behind Access, or logins would loop) |
 | Vaultwarden | ShiNAS | App login (its clients need direct API access) |
-| Immich, Dawarich | ShiNAS | App login, with optional Authentik SSO |
-| Jellyfin, Audiobookshelf, Karakeep | ShiNAS | App login |
+| Immich | ShiNAS | App login, with optional Authentik SSO |
+| Dawarich | ShineoriServer | App login, with optional Authentik SSO |
+| Jellyfin, Audiobookshelf | ShiNAS | App login |
+| Karakeep | ShineoriServer | App login |
 | Open WebUI | ShineoriServer | App login (usually spun down) |
 | *Any other hostname* | n/a | **Catch-all rule returns 404**, so nothing unlisted is reachable |
 
@@ -109,6 +111,7 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 | Testing the new identity provider showed *"Unable to find the requested identity provider"* | I tested immediately after saving, and the new config hadn't reached Cloudflare's edge yet | Waited a minute and ran Test again from the identity-provider list. *"Your connection works!"* |
 | After I deleted the home-IP record, it still resolved | The first delete didn't take. I suspected a DDNS updater was re-creating it and found one on another host, but its logs showed it managed a *different* hostname and had never succeeded | Deleted the record again and verified it against Cloudflare's **authoritative nameservers**, not a cached resolver. Removed the dormant updater anyway. |
 | Couldn't find a `cloudflared` folder with the other Docker stacks | The tunnel runs as a **host service**, not a container. A cloudflared compose file in another stack's folder was an unused install leftover. | Documented the real setup: a systemd service in token mode |
+| After moving Dawarich to the laptop, **Sign in with Authentik** ended on a Cloudflare **502** | I started the login on the laptop's IP, but Authentik sends you back to the public hostname, and that route still pointed at the NAS, where Dawarich was now stopped | Pointed the route at the laptop. Logins now start from the public hostname, so the login cookie and the return address match. |
 
 ## What I'd harden next
 

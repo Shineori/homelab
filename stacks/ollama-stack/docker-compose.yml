@@ -1,0 +1,88 @@
+# ollama-stack  ::  Ollama + Open WebUI + SearXNG on ShineoriServer (<LAN_IP>)
+# Start:  cd ~/docker/ollama-stack && sudo docker compose up -d
+#
+#   Browser ──► Open WebUI :3000 ──► native Ollama :11432 (systemd, RTX 2060)
+#                          └──────► gluetun:8080 ─► SearXNG ─► ProtonVPN ─► search engines
+
+services:
+  # ─────────────────────────────────────────────
+  # Open WebUI — the ChatGPT-style frontend
+  # ─────────────────────────────────────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"          # http://<LAN_IP>:3000
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11432   # native Ollama on the laptop (systemd, GPU)
+      - WEBUI_SECRET_KEY=<redacted>
+      # --- Web search via SearXNG (first-launch defaults; later changes live in Admin Settings) ---
+      - ENABLE_WEB_SEARCH=true
+      - WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://gluetun:8080/search?q=<query>
+      - WEB_SEARCH_RESULT_COUNT=5
+      - WEB_SEARCH_CONCURRENT_REQUESTS=10
+    volumes:
+      - open-webui:/app/backend/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # = the laptop itself, even if its LAN IP changes
+    depends_on:
+      - searxng
+    networks:
+      - ai-net
+
+  # ─────────────────────────────────────────────
+  # gluetun — ProtonVPN tunnel for SearXNG (search engines see the VPN IP, not home)
+  # ─────────────────────────────────────────────
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: searxng-gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "8888:8080"          # SearXNG UI is published HERE now (it lives inside gluetun)
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${PROTON_OVPN_USER}
+      - OPENVPN_PASSWORD=<redacted>
+      - SERVER_COUNTRIES=United States
+      - FIREWALL_INPUT_PORTS=8080   # let Open WebUI + your browser reach SearXNG
+      - TZ=America/New_York
+    networks:
+      - ai-net
+
+  # ─────────────────────────────────────────────
+  # SearXNG — private meta-search engine (all traffic via gluetun)
+  # ─────────────────────────────────────────────
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    network_mode: "service:gluetun"   # no own network: VPN or nothing (kill switch)
+    depends_on:
+      - gluetun
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://<LAN_IP>:8888/
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "1"
+
+networks:
+  ai-net:
+    driver: bridge
+
+volumes:
+  open-webui: {}

@@ -33,6 +33,7 @@ services:
 
   immich-machine-learning:
     container_name: immich_machine_learning
+    profiles: ["local-ml"]
     mem_limit: 2g
     cpus: 1.5
     # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag.

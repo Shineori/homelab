@@ -4,12 +4,14 @@
 
 | | |
 |---|---|
-| **Host** | ShiNAS |
+| **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | LAN only |
 
 Compose file: [`stacks/uptime-kuma/`](https://github.com/shineori/homelab/tree/main/stacks/uptime-kuma)
+
+> 🚚 **Moved from ShiNAS to ShineoriServer** in October 2026 to free up RAM on the NAS. From there it watches the NAS **from the outside**, including a ping monitor for the NAS itself, so it can report when the NAS goes down instead of going down with it. Full story: [Moving services off the NAS](../infrastructure/migration.md).
 
 ## Why I run it
 

@@ -4,12 +4,14 @@
 
 | | |
 |---|---|
-| **Host** | ShiNAS |
+| **Host** | ShineoriServer |
 | **Category** | Apps |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | LAN only, started only when I need it |
 
 Compose file: [`stacks/ghiro/`](https://github.com/shineori/homelab/tree/main/stacks/ghiro)
+
+> 🚚 **Moved from ShiNAS to ShineoriServer** in October 2026 to free up RAM on the NAS. It was **reinstalled fresh** rather than moved: it held no data, and its old image on the NAS turned out to be damaged. Full story: [Moving services off the NAS](../infrastructure/migration.md).
 
 ## Why I run it
 

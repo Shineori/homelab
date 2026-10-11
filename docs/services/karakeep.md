@@ -4,12 +4,14 @@
 
 | | |
 |---|---|
-| **Host** | ShiNAS |
+| **Host** | ShineoriServer |
 | **Category** | Apps |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | Cloudflare Tunnel (no open ports) |
 
 Compose file: [`stacks/karakeep/`](https://github.com/shineori/homelab/tree/main/stacks/karakeep)
+
+> 🚚 **Moved from ShiNAS to ShineoriServer** in October 2026 to free up RAM on the NAS. It now listens on port **3010**, because Open WebUI already uses 3000 on that machine. Full story: [Moving services off the NAS](../infrastructure/migration.md).
 
 ## Why I run it
 

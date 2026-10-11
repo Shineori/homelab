@@ -13,6 +13,9 @@ flowchart LR
     subgraph ShineoriServer
         E[Minecraft]
         F[Local AI]
+        I[Immich ML]
+        J[Monitoring & dashboard]
+        K[Light apps]
     end
     subgraph Windows PC
         G[Security labs]
@@ -30,6 +33,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | 🔐 [Authentik SSO](services/authentik.md) | Self-hosted identity provider, passwordless passkeys, OIDC into my apps |
 | 🛡️ [auditd + Discord alerts](services/security-monitoring.md) | Kernel-level audit rules mapped to attacker goals, real-time alerting through an auditd plugin I wrote |
 | 🔑 [Vaultwarden](services/vaultwarden.md) | Self-hosted password manager with a zero-knowledge design; found and closed open public sign-ups, now invite-only |
+| 🚚 [Moving services off the NAS](infrastructure/migration.md) | Diagnosed a RAM-starved NAS and moved 6 services to a second server, including Docker volume migrations, a broken host VPN, a dead image registry and a damaged image |
 | 📸 [Immich](services/immich.md) | Multi-container photo platform: ML face recognition, vector smart search, SSO through Authentik |
 
 ## Services
@@ -57,9 +61,9 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 |---|---|---|---|
 | [Cloudflare Tunnel](services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
 | [Omada Controller](services/omada-controller.md) | ShiNAS | 🟢 | Manages TP-Link Omada network gear |
-| [Homarr](services/homarr.md) | ShiNAS | 🟢 | Dashboard / home screen for every service |
+| [Homarr](services/homarr.md) | ShineoriServer | 🟢 | Dashboard / home screen for every service |
 | [Diun](services/diun.md) | ShiNAS | 🟢 | Watches every container image and pings Discord when a new stable version ships |
-| [Uptime Kuma](services/uptime-kuma.md) | ShiNAS | 🟢 | Uptime monitoring and alerts for every service |
+| [Uptime Kuma](services/uptime-kuma.md) | ShineoriServer | 🟢 | Uptime monitoring and alerts for every service |
 
 ### Media
 
@@ -75,11 +79,11 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 
 | Service | Host | Status | What it does |
 |---|---|---|---|
-| [Dawarich](services/dawarich.md) | ShiNAS | 🟢 | Self-hosted location history (Google Timeline replacement) |
+| [Dawarich](services/dawarich.md) | ShineoriServer | 🟢 | Self-hosted location history (Google Timeline replacement) |
 | [Flowcase](services/flowcase.md) | ShiNAS | 🟢 | Browser-based isolated workspaces (Kasm-style), routed through ProtonVPN |
-| [Ghiro](services/ghiro.md) | ShiNAS | 🟢 | Image forensics web app |
+| [Ghiro](services/ghiro.md) | ShineoriServer | 🟢 | Image forensics web app |
 | [Paperless-ngx](services/paperless.md) | ShiNAS | 🟢 | Scans, OCRs and organizes documents so they're searchable |
-| [Karakeep](services/karakeep.md) | ShiNAS | 🟢 | Self-hosted bookmark and read-it-later manager |
+| [Karakeep](services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
 
 ### Game servers
 

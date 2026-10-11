@@ -1,0 +1,14 @@
+# Immich machine learning, running on the laptop for the NAS's Immich server
+services:
+  immich-machine-learning:
+    container_name: immich_machine_learning
+    # must match the NAS's Immich version exactly
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.1
+    volumes:
+      - model-cache:/cache            # downloaded AI models live here
+    ports:
+      - "<LAN_IP>:3003:3003"       # LAN only, for the NAS to reach it
+    restart: unless-stopped
+
+volumes:
+  model-cache:

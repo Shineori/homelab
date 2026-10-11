@@ -5,7 +5,7 @@ services:
     volumes:
       - data:/data
     ports:
-      - 3000:3000
+      - 3010:3000
     env_file:
       - .env
     environment:
@@ -13,7 +13,7 @@ services:
       BROWSER_WEB_URL: http://chrome:9222
       DATA_DIR: /data # DON'T CHANGE THIS
   chrome:
-    image: gcr.io/zenika-hub/alpine-chrome:124
+    image: docker.io/zenika/alpine-chrome:124
     labels:
       - "diun.enable=false"
     restart: unless-stopped
