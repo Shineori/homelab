@@ -56,7 +56,7 @@ flowchart LR
 
 ## Security audit
 
-When I documented this tunnel, I reviewed every route and DNS record instead of trusting what I *thought* was configured. It turned up four problems:
+When I documented this tunnel, I reviewed every route and DNS record instead of trusting what I *thought* was configured. It turned up five problems:
 
 | Severity | Finding | Risk | Fix | Status |
 |---|---|---|---|---|
@@ -64,6 +64,7 @@ When I documented this tunnel, I reviewed every route and DNS record instead of 
 | 🟠 Medium | **A DNS record pointed straight at my home IP.** It was left over from an old setup for the Minecraft server. | It skipped Cloudflare entirely and published my home address, a DDoS and scanning target. | Deleted the record. Friends use playit.gg, which never reveals my IP. | ✅ Fixed |
 | 🟡 Low | **A route still pointed at an app I'd removed.** | Harmless while nothing listens there, but anything I later ran on that port would become public by accident. | Deleted the route and its DNS record. | ✅ Fixed |
 | 🟡 Low | **A route for game traffic that could never work.** | Clutter that hides what's really exposed. | Deleted. | ✅ Fixed |
+| 🟡 Low | **A forgotten dynamic-DNS container** on the Minecraft server, configured to publish my home IP on another hostname | It had been failing silently for a long time (Cloudflare rejected its API token), but if anyone ever fixed the token, it would start leaking my IP again | Suspected it of re-creating the deleted record, but checking its config and logs proved it wasn't the cause. Removed it anyway, along with its credential. | ✅ Fixed |
 
 ### How the Access gate works
 
@@ -106,6 +107,7 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 | Problem | Root cause | Fix |
 |---|---|---|
 | Testing the new identity provider showed *"Unable to find the requested identity provider"* | I tested immediately after saving, and the new config hadn't reached Cloudflare's edge yet | Waited a minute and ran Test again from the identity-provider list. *"Your connection works!"* |
+| After I deleted the home-IP record, it still resolved | The first delete didn't take. I suspected a DDNS updater was re-creating it and found one on another host, but its logs showed it managed a *different* hostname and had never succeeded | Deleted the record again and verified it against Cloudflare's **authoritative nameservers**, not a cached resolver. Removed the dormant updater anyway. |
 | Couldn't find a `cloudflared` folder with the other Docker stacks | The tunnel runs as a **host service**, not a container. A cloudflared compose file in another stack's folder was an unused install leftover. | Documented the real setup: a systemd service in token mode |
 
 ## What I'd harden next
@@ -121,4 +123,5 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 - **Federating identity:** connecting Cloudflare Access to my own Authentik over OpenID Connect (client IDs, redirect URIs, signing keys, JWKS)
 - **Configuration drift is a real attack surface.** None of the findings came from one big mistake. Old setups left things behind, and only an actual audit found them.
 - **DNS reveals more than you think.** One leftover record exposed what the whole tunnel was built to hide.
+- **Verify, don't assume.** Checking the authoritative nameservers (not a cache) told me whether the fix had really worked. Reading the DDNS container's logs proved my first theory wrong. Broken services can still be liabilities, so I removed it regardless.
 - **Matching tools to protocols:** HTTP through the tunnel, raw game traffic through playit.gg, private access over Tailscale or the LAN
