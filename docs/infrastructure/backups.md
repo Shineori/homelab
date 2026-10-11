@@ -67,6 +67,19 @@ immich DB dump restorable: YES     (gzip integrity verified)
 
 Then I deleted the scratch copy, since it contained a plaintext vault database.
 
+## The failure-alert test ✅
+
+An alert I've never seen fire is no better than an untested backup. So I ran a throwaway copy of the script pointed at a repository that doesn't exist:
+
+```
+Fatal: repository does not exist        ← deliberate failure
+exit code: 1                            ← failure detected
+staging folder: 0 files                 ← plaintext vault snapshot cleaned up anyway
+📱 Discord #backups: "❌ ShiNAS backup FAILED (line …)"   ← failure reported
+```
+
+One test proved all three: failures are **detected**, **reported**, and **cleaned up after**. Alerts go to a dedicated `#backups` channel with its own webhook, stored root-only and passed to `curl` over stdin.
+
 ## Troubleshooting log
 
 | Problem | Root cause | Fix |
