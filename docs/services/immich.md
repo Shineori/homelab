@@ -67,8 +67,8 @@ flowchart LR
 ## What I'd harden next
 
 - [x] **Pinned `IMMICH_VERSION`** ✅ *Done:* `v3.3.1` instead of a floating tag. I verified it was byte-identical to the running image first, so pinning changed nothing. [Diun](diun.md) now pings me in Discord when a new release ships, so upgrades happen on my schedule, after reading the release notes.
-- [ ] **3-2-1 backups:** 3 copies, on 2 kinds of media, with 1 off-site. Confirm my rsync snapshots cover both the photo library *and* the database (plus Immich's own database dumps), then add an off-site copy.
-- [ ] **Test a restore.** A backup I've never restored is a hope, not a backup.
+- [x] **Nightly encrypted backups** ✅ *Done:* the library plus Immich's own nightly database dumps (thumbnails excluded, since they're regenerable) go to an encrypted restic repository on a second disk. **The restore is tested:** the latest database dump came back intact. See [Backups](../infrastructure/backups.md).
+- [ ] Finish 3-2-1: replicate to my second server, then an encrypted off-site copy
 - [ ] Decide whether to turn off password login once SSO has proven reliable
 - [ ] Hardware acceleration for transcoding and machine learning, if the NAS supports it
 
