@@ -51,6 +51,36 @@ Databases (Postgres, PostGIS, Redis/Valkey) stay **locked to their major version
 | A **separate Discord webhook and channel** | Update chatter stays out of my security-alerts channel, and either webhook can be revoked on its own |
 | Webhook in a root-only `.env` | Entered with `read -s`, so it never touched the screen, my shell history, the compose file or git |
 
+## Least privilege: the socket proxy
+
+I first thought mounting the Docker socket `:ro` made it "look but don't touch". **That's wrong.** `:ro` only stops the socket *file* from being replaced. The Docker API behind it stays fully available, and the Docker engine runs as root, so **socket access means root on the host**.
+
+The fix is a **socket proxy**: a tiny container that holds the real socket and only forwards the requests I allow.
+
+```mermaid
+flowchart LR
+    d[Diun] -- "tcp :2375<br/>private network" --> p[socket-proxy<br/>CONTAINERS=1 · IMAGES=1 · POST=0]
+    p -- "read-only API calls only" --> s[(docker.sock)]
+    d -- internet --> r[Registries + Discord]
+```
+
+| Design choice | Why |
+|---|---|
+| Proxy allows `CONTAINERS` + `IMAGES`, `POST=0` | Diun only needs to *read* which images are running. Every change (create, start, stop, delete) is denied. |
+| Proxy sits on an `internal: true` network | No ports and no internet. Only Diun can reach it. |
+| Diun has **no** socket mount at all | Even if Diun were compromised, the worst it could do is list containers |
+| Proxy pinned by digest | Same rule as everything else: nothing changes by surprise |
+
+**Proven, not assumed.** I tested it from a throwaway container on the proxy's network:
+
+```
+READ  (list containers):  200   ✅ allowed
+WRITE (create container): 403   ✅ blocked
+Diun has the socket?      0     ✅ not mounted
+```
+
+I also removed the socket from [Authentik's worker](authentik.md) entirely, since it never needed it. That means two apps no longer have root-equivalent access to the NAS.
+
 ## Troubleshooting log
 
 | Problem | Root cause | Fix |
@@ -59,7 +89,7 @@ Databases (Postgres, PostGIS, Redis/Valkey) stay **locked to their major version
 
 ## What I'd harden next
 
-- [ ] **Put a docker-socket-proxy in front of the Docker socket.** I first thought mounting the socket `:ro` made it "look but don't touch". **That's wrong:** `:ro` only stops the socket *file* from being replaced, and the Docker API behind it is still fully available. A socket proxy that only allows read-only `GET` requests for containers and images gives Diun exactly what it needs and nothing more. The same fix applies to Authentik's worker.
+- [x] **Put a docker-socket-proxy in front of the Docker socket** ✅ *Done (see below).*
 - [ ] Add Diun to my second server (ShineoriServer) too
 - [ ] A monthly "update day": work through the Discord notifications, read the release notes, and bump the pins
 
@@ -68,4 +98,4 @@ Databases (Postgres, PostGIS, Redis/Valkey) stay **locked to their major version
 - **Pinning is configuration management:** the compose files now describe *exactly* what runs, so a rebuild reproduces it
 - **Verify before you change:** comparing image IDs proved the pins were no-ops before I applied them
 - **Tags vs digests:** a tag is a movable label, and a digest is the content's fingerprint
-- **Read-only isn't always read-only:** `:ro` on a socket protects the file, not the API behind it. I caught my own wrong assumption while writing this page.
+- **Read-only isn't always read-only:** `:ro` on a socket protects the file, not the API behind it. I caught my own wrong assumption while writing this page, fixed it with a socket proxy, and **proved** the fix with a 403.

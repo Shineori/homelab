@@ -1,28 +1,44 @@
 services:
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    container_name: diun-socket-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1      # allow: list containers (Diun needs this)
+      IMAGES: 1          # allow: read image info (Diun needs this)
+      POST: 0            # deny:  ANY change (start/stop/create/delete)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [socket]   # private network only: no ports, no internet
+
   diun:
     image: crazymax/diun:4.33.0
     container_name: diun
-    hostname: shinas                 # shows in notifications, so you know which server
+    hostname: shinas
     command: serve
     restart: unless-stopped
+    depends_on: [socket-proxy]
     env_file:
-      - .env                         # Discord webhook lives here (root-only, never in git)
+      - .env
     environment:
       TZ: America/New_York
       LOG_LEVEL: info
-      DIUN_WATCH_SCHEDULE: "0 */6 * * *"      # every 6 hours
+      DIUN_WATCH_SCHEDULE: "0 */6 * * *"
       DIUN_WATCH_JITTER: "30s"
-      DIUN_WATCH_FIRSTCHECKNOTIF: "false"     # no flood on the first scan
+      DIUN_WATCH_FIRSTCHECKNOTIF: "false"
       DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_ENDPOINT: "tcp://diun-socket-proxy:2375"   # talk to the proxy, not the socket
       DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
-      DIUN_DEFAULTS_WATCHREPO: "true"         # look for NEW tags, not just changed ones
+      DIUN_DEFAULTS_WATCHREPO: "true"
       DIUN_DEFAULTS_NOTIFYON: "new"
       DIUN_DEFAULTS_SORTTAGS: "semver"
       DIUN_DEFAULTS_MAXTAGS: "10"
-      DIUN_DEFAULTS_INCLUDETAGS: '^v?\d+\.\d+\.\d+'                  # real version numbers only
-      DIUN_DEFAULTS_EXCLUDETAGS: '(?i)(rc|beta|alpha|dev|nightly|pre)' # skip pre-releases
+      DIUN_DEFAULTS_INCLUDETAGS: '^v?\d+\.\d+\.\d+'
+      DIUN_DEFAULTS_EXCLUDETAGS: '(?i)(rc|beta|alpha|dev|nightly|pre)'
     volumes:
-      - ./data:/data
-      # NOTE: ':ro' stops the socket file being replaced, but does NOT limit the Docker API.
-      # Hardening TODO: put a read-only docker-socket-proxy in front of it.
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data:/data     # no docker.sock here anymore 🎉
+    networks: [socket, default]   # proxy access + internet (registries, Discord)
+
+networks:
+  socket:
+    internal: true       # this network can't reach the internet at all

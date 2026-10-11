@@ -73,7 +73,8 @@ flowchart LR
 
 ## What I'd harden next
 
-- [ ] **The worker mounts `/var/run/docker.sock` and runs as root.** That's the upstream default, so Authentik can deploy outposts as containers. But access to the Docker socket is effectively root on the host. I only run the built-in embedded outpost, with no providers attached, so nothing needs that socket. Next step: remove the mount and the `user: root` line.
+- [x] **Removed the Docker socket from the worker** ✅ *Done.* The upstream default mounts `/var/run/docker.sock` so Authentik can deploy outposts, but socket access is effectively root on the host. I only run the built-in embedded outpost, so I removed the mount and verified the *running* container no longer has it (`docker inspect` showed 0 socket mounts). Authentik's health checks stayed green.
+- [ ] Drop `user: root` from the worker. Its data folders were created as root, so this needs a careful ownership fix first.
 - [ ] Add Homarr to SSO (planned)
 - [ ] Automated `pg_dump` backups of the Authentik database
 - [ ] Authorization policies so each app only accepts the users it should
