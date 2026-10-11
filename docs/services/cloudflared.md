@@ -113,6 +113,8 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 ## What I'd harden next
 
 - [x] **Moved the tunnel token out of the world-readable systemd unit file** ✅ *Done.* The installer had put it on the `ExecStart` line, where any local user could read it and it showed up in `ps`. It now lives in a root-only `EnvironmentFile` (`chmod 600`). I verified all 4 tunnel connections re-registered and every app still answered. It's the same secrets-in-arguments pattern I found in my [auditd alert script](security-monitoring.md).
+- [x] **Bound the resume site's port to localhost** ✅ *Done.* Docker publishes ports on every interface by default (and its iptables rules skip host firewalls), so the site was also reachable straight from my LAN, skipping Cloudflare. `127.0.0.1:8088:8080` means only `cloudflared` on the host can reach it. Details in the [resume site docs](resume-site.md).
+- [ ] Do the same for other apps whose only client is `cloudflared`. Routes that point at the LAN IP (not `localhost`) have to be switched first, or they'll break.
 - [ ] Protect Vaultwarden's `/admin` page with an Access policy scoped to that path (the main vault has to stay open for its apps).
 - [ ] Turn on Cloudflare Access for other admin-style apps where clients don't need direct API access.
 - [ ] Re-audit routes and DNS records regularly. Today's findings were all **drift**: leftovers from setups that changed.
