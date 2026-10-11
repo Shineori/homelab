@@ -6,7 +6,7 @@
 |---|---|
 | **Host** | Windows PC |
 | **Category** | Game servers |
-| **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
+| **Status** | ⚫ retired <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
 | **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
 
 Not a Docker stack (see setup notes below).
