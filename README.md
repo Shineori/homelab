@@ -20,6 +20,16 @@ flowchart LR
     end
 ```
 
+## ⭐ Featured write-ups
+
+Deep dives with architecture, security decisions, troubleshooting and lessons learned:
+
+| Write-up | Highlights |
+|---|---|
+| 🌐 [Cloudflare Tunnel](docs/services/cloudflared.md) | Zero open ports, a **security audit of my own setup** (5 findings, all fixed), Zero Trust gate on the NAS admin panel |
+| 🔐 [Authentik SSO](docs/services/authentik.md) | Self-hosted identity provider, passwordless passkeys, OIDC into my apps |
+| 🛡️ [auditd + Discord alerts](docs/services/security-monitoring.md) | Kernel-level audit rules mapped to attacker goals, real-time alerting through an auditd plugin I wrote |
+
 ## Services
 
 **Status legend**
