@@ -8,6 +8,7 @@
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
 | **Exposed?** | LAN only |
+| **Port** | 7575 |
 
 Compose file: [`stacks/homarr/`](https://github.com/shineori/homelab/tree/main/stacks/homarr)
 
@@ -15,30 +16,56 @@ Compose file: [`stacks/homarr/`](https://github.com/shineori/homelab/tree/main/s
 
 ## Why I run it
 
-TODO: one or two sentences. What problem does this solve for you?
+My lab has more than twenty services on two machines, each with its own address and port, and I couldn't keep them all in my head. Homarr is my home screen: every app is one click away, with a live up/down dot next to it.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    user[Me / friends] --> entry[TODO: tunnel or LAN]
-    entry --> app[Homarr]
-    app --> data[(TODO: volume / database)]
+    me([Me, on the LAN]) --> homarr[Homarr<br/>ShineoriServer]
+    homarr -- tile links + ping dots --> apps[Apps on both machines]
+    homarr -- integration --> kuma[Uptime Kuma<br/>status page]
+    homarr --> data[(./appdata<br/>boards, apps, integrations)]
 ```
+
+Homarr keeps two separate kinds of records, which tripped me up once (see the troubleshooting log):
+
+| Record | What it does |
+|---|---|
+| **App** | Where a tile **opens** when clicked, plus the address it pings for the status dot |
+| **Integration** | A connection that lets **widgets read data** from another service, like Uptime Kuma's monitor status |
+
+## Security decisions
+
+| Decision | Why |
+|---|---|
+| **LAN only** | A dashboard is a map of my whole lab, so it stays off the internet |
+| **`SECRET_ENCRYPTION_KEY` in a git-ignored `.env`** | Homarr encrypts the API keys and passwords saved in its integrations with this key. The repo only has a blanked `.env.example`. |
+| **Image pinned by digest** | `latest@sha256:...` locks the exact image, so an update can't change it by surprise |
+| **Single sign-on through Authentik** | 🔵 Planned |
 
 ## Setup notes
 
-- Port 7575
-- Authentik SSO planned
-
-TODO: the steps you'd need to rebuild this from scratch.
+1. Generate a random encryption key into `.env` as `SECRET_ENCRYPTION_KEY`
+2. `docker compose up -d`, then open `http://<LAN_IP>:7575` and create the admin account
+3. Add **apps** (name, icon, URL, ping URL), then place them on a board
+4. Add **integrations** for widgets. For Uptime Kuma, choose *Status page slug* and enter the slug of a status page that exists.
+5. **Moving it:** copy the whole folder **including `.env`**. Without the same key, every saved integration secret comes back unreadable.
 
 ## Troubleshooting log
 
 | Date | Problem | Root cause | Fix |
 |---|---|---|---|
-| TODO | | | |
+| 2026-10-11 | Uptime Kuma integration: *unexpected 404* from `/api/status-page/default` | With "No secrets" selected, Homarr asks for a status page named `default`, which I didn't have | Created a status page in Uptime Kuma and switched the integration to *Status page slug* |
+| 2026-10-11 | After the move, the Uptime Kuma tile still opened the old address and showed a red dot | I had updated the **integration**, but the tile uses the **app** record, which still had the old URL and ping URL | Edited the app's URL and ping URL. Linked the integration to the app so they stay together. |
+
+## What I'd harden next
+
+- [ ] Log in through [Authentik](authentik.md) instead of a separate Homarr password
+- [ ] Back up `./appdata` and `.env` from the laptop (not covered by the nightly backup yet)
 
 ## What I learned
 
-TODO: the skill this proves (great for interviews).
+- **Separate "where it links" from "where it reads data":** the app/integration split makes sense once you've hit it, and it's a pattern other dashboards use too
+- **Encryption keys travel with the data.** An app that encrypts secrets at rest is only portable if its key moves with it.
+- **Plan for change:** a dashboard is only useful if it's accurate, so updating Homarr is now part of my checklist whenever a service moves
