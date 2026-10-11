@@ -80,6 +80,72 @@ staging folder: 0 files                 ← plaintext vault snapshot cleaned up 
 
 One test proved all three: failures are **detected**, **reported**, and **cleaned up after**. Alerts go to a dedicated `#backups` channel with its own webhook, stored root-only and passed to `curl` over stdin.
 
+## How to restore 📖
+
+*A runbook for future me, written while everything still works.*
+
+### How the password works
+
+restic encrypts everything **before** it's written to disk. The repository password unlocks the repository's key, which decrypts the data. Without it, the repository is unreadable, by anyone, including me. There's no recovery option.
+
+```
+password ──▶ unlocks the repository key ──▶ decrypts the backups
+```
+
+| Where the password lives | Used when |
+|---|---|
+| `/root/.restic-password` (root-only file on the NAS) | **Automatically**, every night. I never type it. |
+| 🔐 My vault + 📝 a paper copy | **Disaster only:** the NAS was reinstalled, the file is gone, or the backup disk moved to another machine |
+
+### Setup for every command below (on the NAS)
+
+```bash
+export RESTIC_REPOSITORY=/volume2/backups/restic
+export RESTIC_PASSWORD_FILE=/root/.restic-password   # skip this line to be prompted for the password instead
+sudo -E restic snapshots                              # the timeline of every backup
+```
+
+### Scenario A: get back a single file or an older version 🙂
+
+```bash
+sudo -E restic restore latest --tag vaultwarden --target /tmp/restore   # or a snapshot ID instead of "latest"
+# ...copy what you need out of /tmp/restore, then:
+sudo rm -rf /tmp/restore
+```
+
+Or **browse backups like normal folders**:
+
+```bash
+sudo mkdir -p /mnt/restic && sudo -E restic mount /mnt/restic
+# in another terminal: ls /mnt/restic/snapshots/     (Ctrl+C in the first terminal to unmount)
+```
+
+### Scenario B: restore Vaultwarden completely 🔑
+
+```bash
+sudo -E restic restore latest --tag vaultwarden --target /tmp/restore
+cd ~/docker/vaultwarden && sudo docker compose stop          # nothing writes during the swap
+sudo cp -a vw-data vw-data.before-restore                    # safety copy of the current state
+sudo cp -a /tmp/restore/volume2/backups/staging/vaultwarden/. vw-data/
+sudo docker compose start && sudo rm -rf /tmp/restore
+```
+
+The backup includes the database, `rsa_key*` (without it, existing logins break) and attachments. Check by logging in and confirming your item count.
+
+### Scenario C: restore Immich 📸
+
+1. Restore the library: `sudo -E restic restore latest --tag immich --target /tmp/restore`, then copy `.../immich/library/` back into place with the stack stopped
+2. The database comes back from the newest dump in `library/backups/*.sql.gz`, following **Immich's official restore procedure for the installed version** (it loads the dump into a fresh, empty database container). Thumbnails regenerate on their own afterwards.
+
+### Scenario D: total disaster 💥 (NAS dead or reinstalled)
+
+1. Get the backup disk mounted on a working Linux machine (or a reinstalled NAS)
+2. Install restic from GitHub and **verify it** with `sha256sum -c` against the release's `SHA256SUMS`
+3. `restic -r /path/to/backups/restic snapshots`, and **type the password from paper / the vault** at the prompt
+4. Continue with Scenarios B and C
+
+> ⚠️ If the NAS *and* its disks are lost (fire, theft, ransomware), this repository is gone too. That's why off-device and off-site copies are next on the roadmap.
+
 ## Troubleshooting log
 
 | Problem | Root cause | Fix |
