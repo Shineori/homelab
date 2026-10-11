@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Host** | ShiNAS |
+| **Host** | ShiNAS + ShineoriServer (one instance on each) |
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running |
 | **Exposed?** | No. Outbound only (container registries + a Discord webhook) |
@@ -91,7 +91,7 @@ I also removed the socket from [Authentik's worker](authentik.md) entirely, sinc
 ## What I'd harden next
 
 - [x] **Put a docker-socket-proxy in front of the Docker socket** ✅ *Done (see below).*
-- [ ] Add Diun to my second server (ShineoriServer) too. **More important now:** six services moved there, and this Diun only watches the NAS
+- [x] **Added Diun to ShineoriServer** ✅ *Done:* the same compose file, downloaded straight from this repo, with `hostname: shineoriserver` so each Discord alert says which machine it's about. Same socket proxy, same #updates channel, and a test notification confirmed it works.
 - [ ] A monthly "update day": work through the Discord notifications, read the release notes, and bump the pins
 
 ## What I learned

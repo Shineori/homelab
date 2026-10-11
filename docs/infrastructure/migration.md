@@ -105,7 +105,7 @@ About 870 MiB of steady RAM use left the NAS, and more importantly the **up-to-2
 ## What I'd do next
 
 - [ ] **Back up the laptop:** Dawarich, Karakeep, Uptime Kuma and Homarr aren't in the nightly restic run yet ([Backups](backups.md))
-- [ ] **Diun on the laptop:** the NAS's Diun can't see these containers anymore
+- [x] **Diun on the laptop** ✅ *Done:* same setup as the NAS, with alerts labeled `shineoriserver`
 - [ ] **A DHCP reservation for the laptop**, so its address can't change under the services that point at it
 - [ ] Make sure the laptop never sleeps (lid closed, on power), since it's a server now
 - [ ] Delete the rollback copies left on the NAS after a few calm days

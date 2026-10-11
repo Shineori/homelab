@@ -77,7 +77,7 @@ flowchart LR
 
 - [ ] **Back it up.** Since the move it's on the laptop, and the nightly encrypted backup only covers the NAS. Location history is irreplaceable.
 - [ ] Replace the stock database credentials from the upstream compose file
-- [ ] Get version alerts on the laptop too (Diun only watches the NAS)
+- [x] **Version alerts on the laptop** ✅ *Done:* Diun now runs there too
 
 ## What I learned
 
