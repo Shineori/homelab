@@ -29,6 +29,8 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | 🌐 [Cloudflare Tunnel](docs/services/cloudflared.md) | Zero open ports, a **security audit of my own setup** (5 findings, all fixed), Zero Trust gate on the NAS admin panel |
 | 🔐 [Authentik SSO](docs/services/authentik.md) | Self-hosted identity provider, passwordless passkeys, OIDC into my apps |
 | 🛡️ [auditd + Discord alerts](docs/services/security-monitoring.md) | Kernel-level audit rules mapped to attacker goals, real-time alerting through an auditd plugin I wrote |
+| 🔑 [Vaultwarden](docs/services/vaultwarden.md) | Self-hosted password manager with a zero-knowledge design; found and closed open public sign-ups, now invite-only |
+| 📸 [Immich](docs/services/immich.md) | Multi-container photo platform: ML face recognition, vector smart search, SSO through Authentik |
 
 ## Services
 

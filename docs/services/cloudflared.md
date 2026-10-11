@@ -112,7 +112,7 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 
 ## What I'd harden next
 
-- [ ] **Move the tunnel token out of the systemd unit file.** The installer puts it on the `ExecStart` line of a world-readable file, where it's also visible in `ps`. Fix: `EnvironmentFile=` pointing at a root-only (`chmod 600`) file containing `TUNNEL_TOKEN=...`. It's the same secrets-in-arguments pattern I found in my [auditd alert script](security-monitoring.md).
+- [x] **Moved the tunnel token out of the world-readable systemd unit file** ✅ *Done.* The installer had put it on the `ExecStart` line, where any local user could read it and it showed up in `ps`. It now lives in a root-only `EnvironmentFile` (`chmod 600`). I verified all 4 tunnel connections re-registered and every app still answered. It's the same secrets-in-arguments pattern I found in my [auditd alert script](security-monitoring.md).
 - [ ] Protect Vaultwarden's `/admin` page with an Access policy scoped to that path (the main vault has to stay open for its apps).
 - [ ] Turn on Cloudflare Access for other admin-style apps where clients don't need direct API access.
 - [ ] Re-audit routes and DNS records regularly. Today's findings were all **drift**: leftovers from setups that changed.
