@@ -55,6 +55,19 @@ flowchart LR
 | **Postgres data checksums on** | `--data-checksums` detects silent corruption in the database files |
 | **Secrets in `.env`, never in git** | The repo only has a blanked `.env.example` |
 
+## Resource limits
+
+ShiNAS has 7.5 GB of RAM and runs most of my other apps too, so Immich's machine-learning container gets a hard ceiling:
+
+```yaml
+immich-machine-learning:
+  container_name: immich_machine_learning
+  mem_limit: 2g   # can never take more than 2 GB of RAM
+  cpus: 1.5       # at most 1.5 CPU cores, leaving the rest for everything else
+```
+
+The limits only slow Immich's background jobs down. Uploads, browsing and search keep working, and a big backlog just takes longer to finish instead of taking the whole NAS down with it (see the troubleshooting log).
+
 ## Setup notes
 
 1. Download the release's `docker-compose.yml` and `.env` (Immich asks you to use the files from the current release, not the main branch)
@@ -63,11 +76,29 @@ flowchart LR
 4. Publish it through the tunnel, and set the server URL in the mobile app
 5. **SSO:** create an OAuth2/OpenID provider for Immich in Authentik, then enable OAuth under Immich → Administration → Settings → Authentication, using the client ID, client secret and issuer URL
 6. Turn on auto-backup in the phone app
+7. Add the resource limits above, then `docker compose up -d` to recreate the ML container with them
+
+## Troubleshooting log
+
+| Problem | Root cause | Fix |
+|---|---|---|
+| **Uptime Kuma showed "Cannot connect to the socket server"**, and every app on the NAS was slow or timing out | The whole NAS was overloaded, not just Uptime Kuma: load average **36**, swap **5.1 of 5.7 GB** used, and up to **63% iowait** (the CPU waiting on the disk). `docker stats` showed `immich_server` at **183%** CPU and `immich_machine_learning` at **152%**, most likely from Immich reprocessing the library after my upgrade to v3. With no limits, the ML container grabbed RAM until the NAS was swapping to disk, and the disk became the bottleneck for every app. | **Confirmed the cause first:** stopping only the ML container dropped the load from 36 to 13 within minutes, and every app answered again. **Then fixed it for good:** added `mem_limit: 2g` and `cpus: 1.5` to the ML container. After the restart the load settled at **1.75**, with the ML container capped at 2 GiB. |
+
+```
+            BEFORE (no limits)             AFTER (capped)
+load avg    36                             1.75
+swap        5.1 / 5.7 GB                   back to normal
+iowait      up to 63%                      back to normal
+ML memory   unbounded                      207 MiB / 2 GiB cap
+```
 
 ## What I'd harden next
 
 - [x] **Pinned `IMMICH_VERSION`** ✅ *Done:* `v3.3.1` instead of a floating tag. I verified it was byte-identical to the running image first, so pinning changed nothing. [Diun](diun.md) now pings me in Discord when a new release ships, so upgrades happen on my schedule, after reading the release notes.
 - [x] **Nightly encrypted backups** ✅ *Done:* the library plus Immich's own nightly database dumps (thumbnails excluded, since they're regenerable) go to an encrypted restic repository on a second disk. **The restore is tested:** the latest database dump came back intact. See [Backups](../infrastructure/backups.md).
+- [x] **Capped the machine-learning container** ✅ *Done:* `mem_limit: 2g` and `cpus: 1.5`, after it overloaded the whole NAS (see the troubleshooting log)
+- [ ] Set job concurrency to 1 for Smart Search, Face Detection, Video Conversion and Thumbnail Generation (Administration → Settings → Job Settings), so big backlogs run in one steady lane
+- [ ] Get Uptime Kuma alerting on NAS load or swap, so I see the next overload coming instead of finding out from timeouts
 - [ ] Finish 3-2-1: replicate to my second server, then an encrypted off-site copy
 - [ ] Decide whether to turn off password login once SSO has proven reliable
 - [ ] Hardware acceleration for transcoding and machine learning, if the NAS supports it
@@ -78,3 +109,6 @@ flowchart LR
 - **Vector search in practice:** smart search works by turning images and text into embeddings, then finding the closest matches
 - **SSO in a real app:** connecting Immich to my own identity provider over OIDC, while keeping a fallback
 - **Data stewardship:** for irreplaceable data, the hard part isn't running the app, it's backups, restores and controlled upgrades
+- **Symptoms aren't causes:** the alert came from Uptime Kuma, but the problem was Immich. Load, swap, iowait and `docker stats` led from "one app is broken" to "one container is starving the whole server".
+- **Prove the cause before the fix:** stopping just the suspected container and watching the load fall confirmed it, so the permanent fix was aimed at the right thing
+- **Resource limits are a shared-host courtesy:** on a box with limited RAM, one unbounded container can turn into everyone's outage
