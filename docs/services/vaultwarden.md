@@ -49,6 +49,9 @@ Encryption and decryption happen **on my devices**. Vaultwarden only ever stores
 | **Admin panel disabled** | No `ADMIN_TOKEN` is set, so `/admin` shows a "disabled" page and there's no admin login to brute-force |
 | **Published through Cloudflare Tunnel** | No open router ports, home IP hidden, HTTPS at the edge |
 | **Not behind Cloudflare Access** | The Bitwarden apps talk to the API directly and can't complete a browser login challenge. The vault's own encryption and master password are the protection here. |
+| **Email through a dedicated homelab mailbox** | Invites, new-device login alerts and 2FA-by-email go out from a homelab-only Gmail account, never my personal email. It uses STARTTLS on port 587. |
+| **A separate app password per service** | Vaultwarden has its own Gmail app password, not shared with Authentik, so if one leaks I can revoke it without breaking anything else |
+| **SMTP secrets in a root-only `.env`** | Credentials live in `.env` (`chmod 600`, root-owned), loaded with `env_file`. The compose file holds no secrets, and the repo has a blanked `.env.example`. |
 | **`DOMAIN` set to the public HTTPS URL** | Vaultwarden needs this for attachments and passkeys (WebAuthn) to work behind a proxy |
 
 ## Setup notes
@@ -56,9 +59,10 @@ Encryption and decryption happen **on my devices**. Vaultwarden only ever stores
 1. Start the container: `docker compose up -d` (data persists in `./vw-data`)
 2. Publish it through the tunnel and set `DOMAIN` to the public `https://` URL
 3. Create my account, **then** set `SIGNUPS_ALLOWED: "false"` and recreate the container
-4. Create an **Organization** in the web vault and invite friends by email. Invited addresses can still register while public sign-ups are off.
-5. Point the Bitwarden apps at the self-hosted server URL (Settings → Self-hosted)
-6. Import passwords, then move 2FA codes and passkeys in over time
+4. **Email:** create a Gmail app password for the homelab alerts account and write the `SMTP_*` settings to a root-only `.env` (I read the password with `read -s` so it never appears on screen or in shell history). Add `env_file: .env` to the compose file, recreate the container, and test it with *Get master password hint*.
+5. Create an **Organization** in the web vault and invite friends by email. They get a *Join organization* link and can register even though public sign-ups are off.
+6. Point the Bitwarden apps at the self-hosted server URL (Settings → Self-hosted)
+7. Import passwords, then move 2FA codes and passkeys in over time
 
 ## Troubleshooting log
 
@@ -73,11 +77,12 @@ Encryption and decryption happen **on my devices**. Vaultwarden only ever stores
 - [ ] **Automated, encrypted, off-NAS backups of `vw-data/`.** It's the most important data in the lab, because losing it means losing every login.
 - [ ] **Keep an offline emergency kit:** master password plus the 2FA recovery code for my vault account, stored on paper somewhere safe
 - [ ] Check the brute-force protections on the login endpoint, and alert on failed logins
-- [ ] Configure SMTP (using the lab's alerts mailbox) so invitations and new-device login alerts arrive by email
+- [x] **Configured SMTP** ✅ *Done:* invitations and new-device login alerts now arrive by email, sent through the lab's alerts mailbox with a dedicated app password
 
 ## What I learned
 
 - **Zero-knowledge architecture:** why a password manager can be internet-facing when the server never holds decryption keys
 - **The gap between "set up" and "secured":** a one-time step (closing sign-ups) is easy to forget once everything *works*. Auditing your own setup catches it.
 - **Verifying from the attacker's side:** a status flag said one thing, but testing what a stranger can actually do said another. Behavior beats indicators.
+- **Handling secrets during setup:** a password typed with `read -s` into a `chmod 600` file never touches the screen, my shell history, the compose file or git. I confirmed it was written correctly from the file size alone, without ever looking at it.
 - **Passkey portability:** where credentials live matters as much as how strong they are
