@@ -7,7 +7,7 @@ services:
     container_name: resume-site
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8088:8080"  # localhost only: cloudflared can reach it, other LAN devices can't
+      - "<LAN_IP>:8088:8080"  # NAS LAN IP only: the tunnel route points here; LAN devices can reach it too
     volumes:
       - ./site:/usr/share/nginx/html:ro              # your website files, read-only
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
