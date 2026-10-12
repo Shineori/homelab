@@ -1,0 +1,14 @@
+# restic rest-server: receives encrypted backups from ShineoriServer.
+# --append-only: clients can add snapshots but never delete or overwrite them (ransomware-resistant)
+# --private-repos: each user can only reach the repo under its own name
+services:
+  rest-server:
+    image: restic/rest-server:0.13.0
+    container_name: restic-rest-server
+    restart: unless-stopped
+    environment:
+      OPTIONS: "--append-only --private-repos"
+    ports:
+      - "<LAN_IP>:8500:8000"     # NAS LAN IP only
+    volumes:
+      - /volume2/backups/restic-laptop:/data    # second disk; .htpasswd lives here too

@@ -62,7 +62,7 @@ Homarr keeps two separate kinds of records, which tripped me up once (see the tr
 ## What I'd harden next
 
 - [ ] Log in through [Authentik](authentik.md) instead of a separate Homarr password
-- [ ] Back up `./appdata` and `.env` from the laptop (not covered by the nightly backup yet)
+- [x] **Backed up** ✅ *Done:* `./appdata` and `.env` are in the laptop's nightly backup ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
 
 ## What I learned
 

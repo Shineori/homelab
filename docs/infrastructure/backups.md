@@ -8,6 +8,7 @@
 | **Schedule** | Nightly at 03:30 (an hour after Immich's own 02:00 database dump) |
 | **Destination** | Encrypted restic repository on the NAS's **second physical disk** |
 | **Script** | [`scripts/homelab-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/homelab-backup.sh) |
+| **Also covers** | ShineoriServer's apps, through an append-only backup server ([details below](#shineoriserver-backups-append-only)) |
 | **Status** | 🟡 Copy 2 of 3 done. Off-device and off-site copies are next. |
 
 ## Why
@@ -146,6 +147,64 @@ The backup includes the database, `rsa_key*` (without it, existing logins break)
 
 > ⚠️ If the NAS *and* its disks are lost (fire, theft, ransomware), this repository is gone too. That's why off-device and off-site copies are next on the roadmap.
 
+## ShineoriServer backups (append-only)
+
+After [moving six services](migration.md) to my laptop server, their data sat outside the nightly backup. The laptop now backs up to the NAS, designed so that **the laptop can add backups but can never delete them**.
+
+```mermaid
+flowchart LR
+    cron([cron 04:15<br/>laptop]) --> s[laptop-backup.sh]
+    s --> d[Dawarich<br/>pg_dump + pg_restore --list]
+    s --> p[Uptime Kuma, Homarr, Karakeep<br/>paused ~3 s for a consistent copy]
+    d --> r[restic<br/>encrypts on the laptop]
+    p --> r
+    r -- HTTP over LAN --> rs[rest-server on ShiNAS<br/>--append-only --private-repos]
+    rs --> repo[(second disk<br/>separate repository)]
+    nas([cron Sun 05:00<br/>ShiNAS]) --> pr[laptop-backup-prune.sh<br/>forget/prune + check]
+    pr --> repo
+    s -. any failure .-> dc([📱 Discord alert])
+    pr -. any failure .-> dc
+```
+
+| | |
+|---|---|
+| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Homarr, plus each app's compose file and `.env` |
+| **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (for now) |
+| **Schedule** | Laptop nightly at 04:15, after the NAS's own 03:30 run so they don't compete for the disk. NAS cleanup Sundays at 05:00. |
+| **Scripts** | [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh) on the laptop, [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) on the NAS |
+| **Backup server** | [`stacks/restic-server/`](https://github.com/shineori/homelab/tree/main/stacks/restic-server), bound to the NAS's LAN IP |
+| **Size** | First run: 340 MiB of data, 167 MiB stored after compression |
+
+| Design decision | Why |
+|---|---|
+| **Append-only backup server** | The laptop's login can only *add* data. If the laptop were ever compromised, by ransomware for example, the attacker couldn't delete or overwrite its backups. Cleanup runs on the NAS, directly on the files, where the laptop has no say. |
+| **Encrypted on the laptop** | The NAS only ever receives encrypted data |
+| **`--private-repos`** | The laptop's login can only reach its own repository |
+| **A separate repository** | The NAS's backups and the laptop's can't affect each other |
+| **`pg_dump` for Dawarich, a short pause for the SQLite apps** | Both give a consistent copy. PostgreSQL can dump while it runs. For the small SQLite apps, stopping them for about 3 seconds is simpler and more reliable than locating every database file. An `EXIT` trap restarts them even if the backup fails. |
+| **Secrets in root-only files** | The server login lives in a `chmod 600` repository file and the encryption key in a `chmod 600` password file. Both were typed with `read -s`, so neither appeared on screen or in shell history. The key is also in my password manager. |
+
+### Proven ✅
+
+| Test | Result |
+|---|---|
+| Restore | Restored the Dawarich dump from the NAS and read it with `pg_restore --list`: database `dawarich_development`, **578** entries |
+| **Delete from the laptop** | `restic forget <snapshot>` was refused by the NAS with **`403 Forbidden`** 🔒 |
+| Cleanup + verification on the NAS | Retention applied, and `restic check` re-read 5% of the data: **no errors were found** |
+| Key in my password manager | Its SHA-256 fingerprint matches the key the backups actually use, checked without displaying the key |
+
+### Restoring a ShineoriServer app
+
+On the laptop:
+
+```bash
+R="sudo RESTIC_REPOSITORY_FILE=/root/.restic-repo RESTIC_PASSWORD_FILE=/root/.restic-password restic"
+$R snapshots
+$R restore latest --target /tmp/restore --include /home/shineori/docker/uptime-kuma    # one app's folder
+```
+
+If the laptop is gone, run restic **on the NAS** against `/volume2/backups/restic-laptop/shineoriserver`, using the encryption key from my password manager. The Dawarich database comes back from `var/backups/homelab-staging/dawarich.dump` with `pg_restore` into a fresh Dawarich (listing it is tested; a full database reload is on the drill list below).
+
 ## Troubleshooting log
 
 | Problem | Root cause | Fix |
@@ -153,6 +212,8 @@ The backup includes the database, `rsa_key*` (without it, existing logins break)
 | `toomanyrequests` pulling the restic image | Docker Hub's anonymous pull limit, after a night of image pulls | Installed the official binary from GitHub instead, verified with `sha256sum -c` |
 | The script got scrambled when pasted into the terminal | A long multi-line paste was mangled by the terminal | Delivered the file over the network share instead, and confirmed it with a matching SHA-256 on both ends |
 | The restore test couldn't find the restored Immich dump | My test made the folder root-only, but the `*.sql.gz` wildcard was expanded by my *user* shell before `sudo` ran | Ran the whole check inside `sudo sh -c '...'`. The backup itself was fine. |
+| The NAS cleanup failed: *wrong password or no key found* | The key I typed on the NAS didn't match the laptop's (a paste slip) | Compared SHA-256 fingerprints of both files without showing either key, then copied the laptop's working file over SSH instead of retyping it. Also checked that my password manager's copy matched. |
+| A restore check said *Permission denied* even with `sudo` | In `sudo cmd < file`, the `<` is handled by my own shell, not by root | `sudo sh -c 'cmd < file'`, so root opens the file |
 
 ## Roadmap to full 3-2-1
 
@@ -160,6 +221,6 @@ The backup includes the database, `rsa_key*` (without it, existing logins break)
 - [x] **Copy 2:** encrypted restic repository on a **separate physical disk** (survives a dead drive or a bad command)
 - [ ] **Copy 3, separate device:** replicate the repository to my second server, so the backups survive the whole NAS dying
 - [ ] **Off-site:** encrypted copy to cloud storage, so the backups survive fire, theft or ransomware on the home network
-- [ ] **Back up ShineoriServer too:** Dawarich, Karakeep, Uptime Kuma and Homarr now live on the laptop, which this nightly run doesn't cover yet ([migration notes](migration.md))
+- [x] **Back up ShineoriServer too** ✅ *Done:* nightly, encrypted, append-only backups to the NAS, with a tested restore ([above](#shineoriserver-backups-append-only))
 - [ ] **Dead-man's switch:** an Uptime Kuma push monitor that alerts if a night's backup *doesn't run at all* (the Discord trap only catches runs that start and then fail)
-- [ ] Quarterly restore drill
+- [ ] Quarterly restore drill, including a full reload of the Dawarich database into a test container

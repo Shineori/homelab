@@ -104,7 +104,7 @@ About 870 MiB of steady RAM use left the NAS, and more importantly the **up-to-2
 
 ## What I'd do next
 
-- [ ] **Back up the laptop:** Dawarich, Karakeep, Uptime Kuma and Homarr aren't in the nightly restic run yet ([Backups](backups.md))
+- [x] **Back up the laptop** ✅ *Done:* nightly, encrypted, append-only backups to the NAS ([Backups](backups.md#shineoriserver-backups-append-only))
 - [x] **Diun on the laptop** ✅ *Done:* same setup as the NAS, with alerts labeled `shineoriserver`
 - [ ] **A DHCP reservation for the laptop**, so its address can't change under the services that point at it
 - [ ] Make sure the laptop never sleeps (lid closed, on power), since it's a server now

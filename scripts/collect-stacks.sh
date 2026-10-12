@@ -27,7 +27,7 @@ MAP=(
   nas:omada-controller:omada  nas:jellyfin:jellyfin  nas:immich:immich
   nas:arr-stack:arr-stack  nas:qbittorrent-mam:qbittorrent
   nas:audiobookshelf:AudioBookShelf  nas:paperless:paperless  nas:flowcase:Flowcase
-  nas:terraria:terraria  nas:resume-site:resume-site  nas:diun:diun
+  nas:terraria:terraria  nas:resume-site:resume-site  nas:diun:diun  nas:restic-server:restic-server
   # ShineoriServer: RAM-hungry apps with small data (moved off the NAS)
   laptop:immich-ml:immich-ml  laptop:uptime-kuma:uptime-kuma  laptop:homarr:homarr
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker

@@ -69,7 +69,7 @@ flowchart LR
 
 ## What I'd harden next
 
-- [ ] **Back up** the `data` volume from the laptop (not covered by the nightly backup yet)
+- [x] **Backed up** ✅ *Done:* the `data` volume and `.env` are in the laptop's nightly backup ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
 - [ ] Log in through [Authentik](authentik.md)
 - [ ] Re-enable Diun for the Chrome image now that it's on Docker Hub
 

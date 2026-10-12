@@ -75,7 +75,7 @@ flowchart LR
 
 ## What I'd harden next
 
-- [ ] **Back it up.** Since the move it's on the laptop, and the nightly encrypted backup only covers the NAS. Location history is irreplaceable.
+- [x] **Backed up** ✅ *Done:* nightly `pg_dump` plus its files, encrypted, to an append-only repository on the NAS. Restore tested. ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
 - [ ] Replace the stock database credentials from the upstream compose file
 - [x] **Version alerts on the laptop** ✅ *Done:* Diun now runs there too
 
