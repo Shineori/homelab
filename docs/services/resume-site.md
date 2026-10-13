@@ -6,7 +6,7 @@
 |---|---|
 | **Host** | ShiNAS |
 | **Category** | Web |
-| **Status** | 🟡 in progress <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
+| **Status** | 🟢 running (live) |
 | **Exposed?** | Cloudflare Tunnel → `http://<LAN_IP>:8088` (port bound to the NAS's LAN IP) |
 
 Compose file: [`stacks/resume-site/`](https://github.com/shineori/homelab/tree/main/stacks/resume-site)

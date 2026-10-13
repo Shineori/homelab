@@ -6,39 +6,49 @@
 |---|---|
 | **Host** | ShiNAS |
 | **Category** | Game servers |
-| **Status** | ⚫ retired <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Status** | ⚫ retired |
+| **Exposed?** | Was: playit.gg tunnel (no open ports) |
+| **World** | ChaosRealm: Large, Master Mode, with a custom modpack |
 
 Not a Docker stack (see setup notes below).
 
-## Why I run it
+## Why I ran it
 
-TODO: one or two sentences. What problem does this solve for you?
+A modded Terraria world for my friends and me, running on my own hardware instead of someone's PC that had to stay on. I retired it when the group stopped playing, and kept the write-up for what it taught me about debugging.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    user[Me / friends] --> entry[TODO: tunnel or LAN]
-    entry --> app[Terraria (tModLoader)]
-    app --> data[(TODO: volume / database)]
+    friends([Friends' tModLoader clients]) --> playit[playit.gg relay]
+    playit --> agent[playit agent]
+    agent --> srv[tModLoader server<br/>on ShiNAS]
+    srv --> world[(ChaosRealm world<br/>+ modpack)]
 ```
+
+## Security decisions
+
+| Decision | Why |
+|---|---|
+| **playit.gg instead of port forwarding** | No open router ports, and my home IP stayed hidden |
+| **Covered by auditd monitoring** | The NAS's [security monitoring](security-monitoring.md) watched the host the server ran on |
 
 ## Setup notes
 
-- Retired: stopped hosting once the group stopped playing
-- Custom modpack; Large + Master Mode world
-- Diagnosed crash loops down to specific mods (TerrariaAmbience, TerrariaAmbienceAPI, PermaBuffs)
-- Temporarily migrated to vanilla during debugging
-
-TODO: the steps you'd need to rebuild this from scratch.
+1. Install the tModLoader dedicated server and build the modpack
+2. Create a **Large, Master Mode** world (ChaosRealm)
+3. Create a playit.gg tunnel to the server's port and share the playit address with friends
+4. Retired: the world and modpack are kept, the server is stopped
 
 ## Troubleshooting log
 
 | Date | Problem | Root cause | Fix |
 |---|---|---|---|
-| TODO | | | |
+| — | The server kept crashing | Traced through the logs to three specific mods: **TerrariaAmbience**, **TerrariaAmbienceAPI** and **PermaBuffs** | Removed those mods. Switched to vanilla temporarily while narrowing it down. |
+| — | auditd flooded my Discord alerts | The server's normal runtime writes (world saves, logs) matched my file-watch rules | Tuned the audit rules to ignore the game server's expected writes, so real alerts stayed visible ([details](security-monitoring.md)) |
 
 ## What I learned
 
-TODO: the skill this proves (great for interviews).
+- **Debugging by elimination:** a crash log plus removing mods one group at a time found the exact culprits
+- **Tuning security alerts:** rules that fire on normal activity bury the alerts that matter
+- **Tunnels for game traffic** without exposing my home network

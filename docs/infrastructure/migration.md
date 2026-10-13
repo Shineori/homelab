@@ -29,7 +29,7 @@ Meanwhile the laptop server had 31 GB of RAM and was mostly idle between AI chat
 
 | Stays on ShiNAS 🔒 | Why |
 |---|---|
-| Immich (server + database), Paperless | Irreplaceable photos and documents, already in the nightly encrypted backup |
+| Immich (server + database), Paperless | Irreplaceable photos and documents. Immich is in the nightly encrypted backup; adding Paperless is on the [backup roadmap](backups.md#roadmap-to-full-3-2-1). |
 | Vaultwarden, Authentik | Identity and passwords: the most important services stay on the most reliable box |
 | Jellyfin, Audiobookshelf, *arr stack, qBittorrent | They read and write the media on the NAS disks directly |
 | Diun, resume site, cloudflared | Diun watches the host it runs on; the other two are tiny |

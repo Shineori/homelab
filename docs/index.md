@@ -73,7 +73,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | [Jellyfin](services/jellyfin.md) | ShiNAS | 🟢 | Media server for movies and shows |
 | [Immich](services/immich.md) | ShiNAS | 🟢 | Self-hosted Google Photos replacement |
 | [*arr stack](services/arr-stack.md) | ShiNAS | 🟢 | Prowlarr + arr apps + qBittorrent routed through gluetun/ProtonVPN |
-| [qBittorrent (standalone)](services/qbittorrent-mam.md) | ShiNAS | 🟢 | Separate qBittorrent instance with tracker-specific rules |
+| [qBittorrent (standalone)](services/qbittorrent-mam.md) | ShiNAS | ⏸️ | Separate qBittorrent instance with tracker-specific rules |
 | [Audiobookshelf](services/audiobookshelf.md) | ShiNAS | 🟢 | Audiobook and podcast server |
 
 ### Apps
@@ -113,7 +113,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 
 | Service | Host | Status | What it does |
 |---|---|---|---|
-| [Terminal resume site](services/resume-site.md) | ShiNAS | 🟡 | Interactive terminal-style resume served from NGINX in Docker |
+| [Terminal resume site](services/resume-site.md) | ShiNAS | 🟢 | Interactive terminal-style resume served from NGINX in Docker |
 
 ## Infrastructure
 - [Hardware](infrastructure/hardware.md)

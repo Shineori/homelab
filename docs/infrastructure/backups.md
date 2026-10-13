@@ -223,4 +223,5 @@ If the laptop is gone, run restic **on the NAS** against `/volume2/backups/resti
 - [ ] **Off-site:** encrypted copy to cloud storage, so the backups survive fire, theft or ransomware on the home network
 - [x] **Back up ShineoriServer too** ✅ *Done:* nightly, encrypted, append-only backups to the NAS, with a tested restore ([above](#shineoriserver-backups-append-only))
 - [ ] **Dead-man's switch:** an Uptime Kuma push monitor that alerts if a night's backup *doesn't run at all* (the Discord trap only catches runs that start and then fail)
+- [ ] **Add Paperless** (scanned documents are as irreplaceable as photos): its `data/` and `media/` folders, or a nightly `document_exporter` run
 - [ ] Quarterly restore drill, including a full reload of the Dawarich database into a test container
