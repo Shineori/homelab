@@ -109,7 +109,7 @@ About 870 MiB of steady RAM use left the NAS, and more importantly the **up-to-2
 - [x] **A DHCP reservation for the laptop** ✅ *Done:* its address is reserved in the router, so it can't change under the tunnel routes, Immich ML and the backup job that point at it
 - [ ] Make sure the laptop never sleeps (lid closed, on power), since it's a server now
 - [ ] Delete the rollback copies left on the NAS after a few calm days
-- [ ] GPU acceleration for Immich ML on the RTX 2060
+- [x] **GPU acceleration for Immich ML** ✅ *Done:* runs on the RTX 2060 through the `-cuda` image ([details](../services/immich.md))
 
 ## What I learned
 

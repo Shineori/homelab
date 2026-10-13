@@ -82,7 +82,8 @@ Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (
 - **On the laptop:** [`stacks/immich-ml/`](https://github.com/shineori/homelab/tree/main/stacks/immich-ml) runs the same version tag as the server (`v3.3.1`), bound to the laptop's LAN IP only
 - **In Immich:** Administration → Settings → Machine Learning points at the laptop
 - **On the NAS:** the ML service keeps its limits but sits behind `profiles: ["local-ml"]`, so it doesn't start unless I ask for it. Rolling back is one line.
-- **Version lock:** when Diun reports a new Immich release, I bump the tag on **both** machines
+- **Runs on the GPU:** the `v3.3.1-cuda` image plus a Docker GPU reservation. The logs confirm `['CUDAExecutionProvider', 'CPUExecutionProvider']` (GPU first, CPU as the fallback), and the models use about 500 MiB of the card's 6 GB, shared with Ollama.
+- **Version lock:** when Diun reports a new Immich release, I bump the tag on **both** machines (`vX.Y.Z` on the NAS, `vX.Y.Z-cuda` on the laptop)
 - **If the laptop is off,** smart search and face detection pause and catch up later. Uploads, browsing and backups keep working.
 
 ## Setup notes
@@ -101,6 +102,7 @@ Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (
 |---|---|---|
 | **Uptime Kuma showed "Cannot connect to the socket server"**, and every app on the NAS was slow or timing out | The whole NAS was overloaded, not just Uptime Kuma: load average **36**, swap **5.1 of 5.7 GB** used, and up to **63% iowait** (the CPU waiting on the disk). `docker stats` showed `immich_server` at **183%** CPU and `immich_machine_learning` at **152%**, most likely from Immich reprocessing the library after my upgrade to v3. With no limits, the ML container grabbed RAM until the NAS was swapping to disk, and the disk became the bottleneck for every app. | **Confirmed the cause first:** stopping only the ML container dropped the load from 36 to 13 within minutes, and every app answered again. **Then fixed it for good:** added `mem_limit: 2g` and `cpus: 1.5` to the ML container. After the restart the load settled at **1.75**, with the ML container capped at 2 GiB. Also dropped the heavy jobs' concurrency to 1 in Immich's Job Settings. |
 | After adding `profiles: ["local-ml"]`, the NAS's ML container kept running | `docker compose up -d --remove-orphans` doesn't remove containers of profile-disabled services, because they're still part of the project | Stopped and removed it by hand once (`docker stop` + `docker rm`). With the profile set, it doesn't come back. |
+| Switching to the GPU image seemed to do nothing: the logs still said `CPUExecutionProvider` | The compose file was owned by root, so `cat > docker-compose.yml` failed with *Permission denied*. The old file stayed, and `up -d` just reported the container as running. | Wrote the file with `sudo tee` instead (`sudo` doesn't apply to a `>` redirect). The models load on the first request, so I sent a search to trigger them, then confirmed `CUDAExecutionProvider` in the logs and GPU memory use in `nvidia-smi`. |
 
 ```
             BEFORE (no limits)             AFTER (capped)
@@ -120,7 +122,7 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 - [ ] Finish 3-2-1: replicate to my second server, then an encrypted off-site copy
 - [ ] Decide whether to turn off password login once SSO has proven reliable
 - [x] **Moved machine learning off the NAS** ✅ *Done:* it runs on ShineoriServer now (see Resource limits)
-- [ ] GPU acceleration for machine learning: ShineoriServer has an RTX 2060, so the `-cuda` image should make face detection and smart search much faster
+- [x] **GPU acceleration for machine learning** ✅ *Done:* the laptop's RTX 2060 now runs face detection, smart search and OCR through the `-cuda` image (see below)
 - [ ] Hardware acceleration for video transcoding on the NAS, if it supports it
 
 ## What I learned
