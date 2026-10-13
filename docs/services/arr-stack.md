@@ -7,7 +7,7 @@
 | **Host** | ShiNAS |
 | **Category** | Media |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | LAN only; torrent traffic leaves through ProtonVPN (gluetun) |
 
 Compose file: [`stacks/arr-stack/`](https://github.com/shineori/homelab/tree/main/stacks/arr-stack)
 

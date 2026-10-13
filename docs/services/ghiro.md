@@ -6,7 +6,7 @@
 |---|---|
 | **Host** | ShineoriServer |
 | **Category** | Apps |
-| **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
+| **Status** | ⏸️ on demand (started only when I need it) |
 | **Exposed?** | LAN only, started only when I need it |
 | **Port** | 9991 |
 

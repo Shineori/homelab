@@ -8,7 +8,7 @@
 | **Category** | Security & identity |
 | **Status** | 🟢 running |
 | **Exposed?** | Cloudflare Tunnel (no open ports) |
-| **Version** | 2026.6.0 |
+| **Version** | 1.37.3 (pinned) |
 
 Compose file: [`stacks/vaultwarden/`](https://github.com/shineori/homelab/tree/main/stacks/vaultwarden)
 

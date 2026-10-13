@@ -47,7 +47,7 @@ Databases (Postgres, PostGIS, Redis/Valkey) stay **locked to their major version
 | Exclude `rc / beta / alpha / dev / nightly / pre` | Stable releases only |
 | `FIRSTCHECKNOTIF: false` | The first scan quietly records what exists, instead of announcing every historical version |
 | Every 6 hours, 30s jitter | Frequent enough to be useful, gentle on registry rate limits |
-| `hostname: shinas` | Notifications say which server they came from, ready for when I add Diun to my second server |
+| `hostname: shinas` / `shineoriserver` | Each Discord notification says which server it's about, since Diun runs on both |
 | A **separate Discord webhook and channel** | Update chatter stays out of my security-alerts channel, and either webhook can be revoked on its own |
 | Webhook in a root-only `.env` | Entered with `read -s`, so it never touched the screen, my shell history, the compose file or git |
 

@@ -6,8 +6,8 @@
 |---|---|
 | **Host** | ShiNAS |
 | **Category** | Networking & monitoring |
-| **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Status** | ⏸️ on demand (started only when I need it) |
+| **Exposed?** | LAN only |
 
 Compose file: [`stacks/omada-controller/`](https://github.com/shineori/homelab/tree/main/stacks/omada-controller)
 

@@ -7,7 +7,7 @@
 | **Host** | ShiNAS |
 | **Category** | Apps |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | LAN only (not published through the tunnel) |
 
 Compose file: [`stacks/paperless/`](https://github.com/shineori/homelab/tree/main/stacks/paperless)
 

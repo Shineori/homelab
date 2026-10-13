@@ -2,9 +2,9 @@
 
 | Machine | Role | OS | Specs | Notes |
 |---|---|---|---|---|
-| **ShiNAS** | Main server: storage + most Docker stacks | Vendor NAS OS (Debian-based) | TODO | Stacks live in `~/docker` |
-| **ShineoriServer** | RAM-hungry workloads: Ollama, Minecraft, Immich ML, Dawarich, Karakeep, Uptime Kuma, Homarr | TODO | 31 GB RAM | Laptop repurposed as a server |
-| **Windows PC** | Labs (VMware, EVE-NG, pentesting), The Forest server | Windows 11 | TODO | |
+| **ShiNAS** | Main server: storage + most Docker stacks | Vendor NAS OS (Debian-based) | 7.5 GB RAM, two drives (data + backup disk) | Stacks live in `~/docker` |
+| **ShineoriServer** | RAM-hungry workloads: Ollama, Minecraft, Immich ML, Dawarich, Karakeep, Uptime Kuma, Homarr | Linux | 31 GB RAM, RTX 2060 (used by Ollama) | Laptop repurposed as a server |
+| **Windows PC** | Labs (VMware, EVE-NG, pentesting); used to host The Forest server (retired) | Windows 11 | | |
 
 > 🔒 Hardware vendors and models are intentionally left out. Publishing them would advertise exactly which firmware vulnerabilities apply to my network.
 

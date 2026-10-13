@@ -46,6 +46,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | 🟡 | In progress | Being built or still being configured |
 | 🔵 | Planned | Researched and on the roadmap, not built yet |
 | ⚫ | Retired | Shut down, kept here for the write-up and lessons learned |
+| ⏸️ | On demand | Installed and working, but only started when I need it |
 
 ### Security & identity
 
@@ -60,7 +61,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Cloudflare Tunnel](services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
-| [Omada Controller](services/omada-controller.md) | ShiNAS | 🟢 | Manages TP-Link Omada network gear |
+| [Omada Controller](services/omada-controller.md) | ShiNAS | ⏸️ | Manages TP-Link Omada network gear |
 | [Homarr](services/homarr.md) | ShineoriServer | 🟢 | Dashboard / home screen for every service |
 | [Diun](services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |
 | [Uptime Kuma](services/uptime-kuma.md) | ShineoriServer | 🟢 | Uptime monitoring and alerts for every service |
@@ -80,8 +81,8 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Dawarich](services/dawarich.md) | ShineoriServer | 🟢 | Self-hosted location history (Google Timeline replacement) |
-| [Flowcase](services/flowcase.md) | ShiNAS | 🟢 | Browser-based isolated workspaces (Kasm-style), routed through ProtonVPN |
-| [Ghiro](services/ghiro.md) | ShineoriServer | 🟢 | Image forensics web app |
+| [Flowcase](services/flowcase.md) | ShiNAS | ⏸️ | Browser-based isolated workspaces (Kasm-style), routed through ProtonVPN |
+| [Ghiro](services/ghiro.md) | ShineoriServer | ⏸️ | Image forensics web app |
 | [Paperless-ngx](services/paperless.md) | ShiNAS | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
 

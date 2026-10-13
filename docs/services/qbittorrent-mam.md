@@ -7,7 +7,7 @@
 | **Host** | ShiNAS |
 | **Category** | Media |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | Web UI LAN only (not published through the tunnel) |
 
 Compose file: [`stacks/qbittorrent-mam/`](https://github.com/shineori/homelab/tree/main/stacks/qbittorrent-mam)
 

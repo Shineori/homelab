@@ -7,7 +7,7 @@
 | **Host** | ShiNAS |
 | **Category** | Media |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | TODO: LAN only / Cloudflare Tunnel / playit / Tailscale |
+| **Exposed?** | Cloudflare Tunnel (no open ports), app login |
 
 Compose file: [`stacks/jellyfin/`](https://github.com/shineori/homelab/tree/main/stacks/jellyfin)
 
