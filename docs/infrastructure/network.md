@@ -27,4 +27,5 @@ flowchart TB
 ## Conventions
 - Containers run as PUID 1000 / PGID 100
 - All stacks consolidated under `~/docker/<service>`
-- TODO: VLANs, Omada setup, IP plan (redact real IPs if repo is public)
+- Servers use fixed addresses that the tunnel routes and monitors depend on (real IPs are kept out of this public repo)
+- Planned: VLANs to separate servers, personal devices and IoT, practiced first in the [OPNsense lab](../services/opnsense-lab.md)
