@@ -106,7 +106,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Pentesting lab](services/pentest-lab.md) | Windows PC | 🟢 | Attacker/target lab for practicing offensive security legally |
-| [OPNsense router lab](services/opnsense-lab.md) | Windows PC | 🟡 | Virtual OPNsense router in VMware Workstation Pro, rehearsal for a NUC router |
+| [OPNsense router lab](services/opnsense-lab.md) | Windows PC | 🟢 | Virtual OPNsense router in VMware Workstation Pro, rehearsal for a NUC router |
 | [EVE-NG](services/eve-ng.md) | Windows PC | 🟡 | Network emulation lab (Community Edition) |
 
 ### Web
