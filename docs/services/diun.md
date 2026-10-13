@@ -102,7 +102,7 @@ Rolling back is putting the old tag back, **unless** the new version migrated th
 
 - **Version labels aren't always versions.** Homarr's label said `main` (a code branch). Comparing the image's build date with the release dates told me which version it really was.
 - **Images on `:latest` update themselves** whenever their stack restarts. SearXNG was already on the version Diun announced, so I pinned it.
-- **Some apps' data is tied to their version.** Meilisearch can't open data from a much older release, but it's only Karakeep's search index, so the plan is to rebuild the index rather than migrate it.
+- **Some apps' data is tied to their version.** Meilisearch can't open data from a much older release, but it's only Karakeep's search index, so I rebuilt the index instead of migrating it. I also upgraded to the version **Karakeep recommends** (`v1.41.0`), not the newest one Diun announced (`v1.55.0`): for a dependency, the app that uses it decides the version.
 
 ## Troubleshooting log
 

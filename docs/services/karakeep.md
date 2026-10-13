@@ -48,7 +48,7 @@ flowchart LR
 | **Local AI only** | Tagging and summaries run on my own Ollama, so the pages I save never leave my lab |
 | **Secrets in a git-ignored `.env`** | `NEXTAUTH_SECRET` and `MEILI_MASTER_KEY`. The repo only has a blanked `.env.example`. |
 | **`NEXTAUTH_URL` = the public hostname** | The login system builds its links and redirects from this address |
-| **Pinned versions** | The app by digest, Meilisearch `v1.13.3`, Chrome `124` |
+| **Pinned versions** | The app by digest, Meilisearch `v1.41.0` (the version Karakeep recommends), Chrome `124` |
 
 ## Setup notes
 
@@ -66,6 +66,7 @@ flowchart LR
 | 2026-10-11 | The Chrome image **couldn't be downloaded at all** on the new machine (*"billing must be enabled"*) | The Google registry project hosting it stopped serving downloads. It only worked on the NAS because it was downloaded long ago. | Switched to the same image on Docker Hub: `docker.io/zenika/alpine-chrome:124` |
 | 2026-10-11 | Port 3000 was already taken on the new machine | Open WebUI uses 3000 there | Published Karakeep on **3010** instead (`3010:3000`) and updated the tunnel route |
 | 2026-10-11 | `NEXTAUTH_URL` was `http://localhost:3000` | A wrong value from the original setup, found during the move | Set it to the public hostname |
+| 2026-10-13 | Diun announced Meilisearch `v1.55.0`, but I was on `v1.13.3` | Meilisearch's data files are tied to its version, so a big jump can refuse to open the old index. And the newest release isn't necessarily one Karakeep supports. | Checked Karakeep's docs: they recommend **`v1.41.0`**. Followed their procedure: stopped Meilisearch, set the old `data.ms` aside, started `v1.41.0` empty, then ran **Admin → Background Jobs → Reindex All Bookmarks**. All bookmarks were re-indexed with no errors. |
 
 ## What I'd harden next
 
@@ -77,5 +78,7 @@ flowchart LR
 
 - **Multi-container apps:** a "simple" bookmark app is really a web app, a headless browser, a search engine and an AI model working together
 - **Images can disappear:** an image that ran fine for months became impossible to download, and I only found out when I moved the app
+- **The newest version isn't always the right version:** for a dependency like Meilisearch, the app (Karakeep) decides which version to run, not the update notifier
+- **Rebuildable vs irreplaceable data:** the search index can be thrown away and rebuilt from the bookmarks, which made a risky upgrade simple
 - **Ports are a shared resource:** two apps on one machine can't both publish the same port, but the container can keep its internal port (`3010:3000`)
 - **Keep AI local when the data is personal:** what I read says a lot about me, so the tagging runs on my own GPU
