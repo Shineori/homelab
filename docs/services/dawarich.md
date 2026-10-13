@@ -72,6 +72,7 @@ flowchart LR
 | 2026-10-11 | Moving the stack folder alone would have produced an **empty** Dawarich | All the data lives in Docker named volumes, not in the folder | Exported each volume to a tarball with a throwaway container, created empty volumes on the new machine with `docker compose create`, then imported them. Checked `PG_VERSION` before starting. |
 | 2026-10-11 | Needed the new machine's IP in `APPLICATION_HOSTS` | Rails rejects requests for hosts that aren't on the allow-list | Appended it to `.env` with a leading newline, so it couldn't get glued onto the end of `SECRET_KEY_BASE` |
 | 2026-10-11 | *Sign in with Authentik* ended on a Cloudflare **502** | The tunnel route still pointed at the old machine. I'd also started the login on the LAN IP, but Authentik sends you back to the public hostname, so the login cookie wouldn't have matched anyway. | Repointed the tunnel route and started the login from the public hostname |
+| 2026-10-13 | The web app was down for hours while the database and background worker were fine | I'd rebooted the laptop. Docker stopped every container cleanly (exit code 0), and the web app and worker used the upstream `restart: on-failure` policy, which only restarts after a *crash*, so a clean stop left them down. | Changed both to `restart: unless-stopped`, like every other app in the lab. Found the cause in the system journal: `sudo reboot now` at the exact second the app shut down. |
 
 ## What I'd harden next
 

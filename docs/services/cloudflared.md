@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Host** | ShiNAS (runs as a host service, not in Docker) |
+| **Host** | ShiNAS (runs as a host service, not in Docker); a second, separate tunnel runs on ShineoriServer (see below) |
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running |
 | **Mode** | Remotely managed (token): routes live in the Cloudflare dashboard |
@@ -32,6 +32,17 @@ flowchart LR
     cfd --> ai[Open WebUI, Dawarich, Karakeep<br/>on ShineoriServer]
     edge -. unknown hostname .-> x[404 catch-all]
 ```
+
+### Two tunnels, one per domain
+
+I own two domains, and each one has its **own tunnel on its own machine**:
+
+| Tunnel | Runs on | Publishes |
+|---|---|---|
+| Tunnel 1 (this page) | ShiNAS | Everything on my main domain, including apps that live on ShineoriServer, reached over the LAN |
+| Tunnel 2 | ShineoriServer | My second domain |
+
+Keeping them separate means each tunnel has its own token and its own routes, and a problem with one machine or one tunnel never takes down the other domain.
 
 ### What's published
 

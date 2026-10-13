@@ -63,7 +63,8 @@ flowchart LR
 
 ## What I'd harden next
 
-- [ ] Pin Open WebUI (`:main`), SearXNG and gluetun instead of floating tags
+- [x] **Pinned SearXNG** ✅ *Done:* `2026.10.13-22c64b8d3` (it was on `:latest`, so it had already updated itself the last time the stack started)
+- [ ] Pin Open WebUI (`:main`) and gluetun too
 - [ ] Bind Open WebUI's port to the LAN IP instead of every interface
 - [ ] Back up Open WebUI's chat history volume
 

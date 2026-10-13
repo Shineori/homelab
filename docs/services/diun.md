@@ -81,6 +81,29 @@ Diun has the socket?      0     ✅ not mounted
 
 I also removed the socket from [Authentik's worker](authentik.md) entirely, since it never needed it. That means two apps no longer have root-equivalent access to the NAS.
 
+## How I apply an update
+
+Diun only tells me; I do the update by hand:
+
+```
+1. read     → the release notes (look for "breaking changes", and be extra careful with major versions)
+2. check    → the version I'm actually running:
+              docker inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' <container>
+3. backup   → make sure that night's backup ran, or run one now
+4. bump     → change the tag in the compose file (keep a .bak copy of the old file)
+5. apply    → docker compose pull && docker compose up -d
+6. verify   → logs are clean, the app opens, the data is there
+7. record   → update the stack and docs in this repo
+```
+
+Rolling back is putting the old tag back, **unless** the new version migrated the app's database. That's why step 3 comes before step 5.
+
+**Gotchas I've hit:**
+
+- **Version labels aren't always versions.** Homarr's label said `main` (a code branch). Comparing the image's build date with the release dates told me which version it really was.
+- **Images on `:latest` update themselves** whenever their stack restarts. SearXNG was already on the version Diun announced, so I pinned it.
+- **Some apps' data is tied to their version.** Meilisearch can't open data from a much older release, but it's only Karakeep's search index, so the plan is to rebuild the index rather than migrate it.
+
 ## Troubleshooting log
 
 | Problem | Root cause | Fix |

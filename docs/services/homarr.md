@@ -41,7 +41,7 @@ Homarr keeps two separate kinds of records, which tripped me up once (see the tr
 |---|---|
 | **LAN only** | A dashboard is a map of my whole lab, so it stays off the internet |
 | **`SECRET_ENCRYPTION_KEY` in a git-ignored `.env`** | Homarr encrypts the API keys and passwords saved in its integrations with this key. The repo only has a blanked `.env.example`. |
-| **Image pinned by digest** | `latest@sha256:...` locks the exact image, so an update can't change it by surprise |
+| **Pinned to a version** (`v2.5.2`) | Updates only happen when I change the tag. It used to be pinned by digest, which was safe but hid which version I was running: the image's version label just said `main`. |
 | **Single sign-on through Authentik** | 🔵 Planned |
 
 ## Setup notes
@@ -58,6 +58,7 @@ Homarr keeps two separate kinds of records, which tripped me up once (see the tr
 |---|---|---|---|
 | 2026-10-11 | Uptime Kuma integration: *unexpected 404* from `/api/status-page/default` | With "No secrets" selected, Homarr asks for a status page named `default`, which I didn't have | Created a status page in Uptime Kuma and switched the integration to *Status page slug* |
 | 2026-10-11 | After the move, the Uptime Kuma tile still opened the old address and showed a red dot | I had updated the **integration**, but the tile uses the **app** record, which still had the old URL and ping URL | Edited the app's URL and ping URL. Linked the integration to the app so they stay together. |
+| 2026-10-13 | Diun announced v2.5.x, but I couldn't tell which version I was on | The image was pinned by digest, and its version label only said `main` | Compared the image's build date (Oct 9) with the release dates: it was the release just before v2.5.0. Took a backup, then updated to `v2.5.2` with a real version tag. |
 
 ## What I'd harden next
 
