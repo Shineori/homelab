@@ -57,7 +57,7 @@ flowchart LR
 
 ## Resource limits
 
-The ML container got a hard ceiling to keep it from overwhelming ShiNAS:
+ShiNAS has 7.5 GB of RAM and runs most of my other apps too, so Immich's machine-learning container gets a hard ceiling:
 
 ```yaml
 immich-machine-learning:
@@ -65,13 +65,13 @@ immich-machine-learning:
   cpus: 1.5       # at most 1.5 CPU cores, leaving the rest for everything else
 ```
 
-Inside Immich, **Administration → Settings → Job Settings** has the concurrency for **Smart Search, Face Detection, Video Conversion and Thumbnail Generation** set to **1**. The Docker limits are the seatbelt (a hard ceiling Immich can't break through), and the concurrency is the speed limit (Immich doesn't try to do everything at once in the first place). After that, **Administration → Settings → Machine Learning** pointed to the ShineoriServer instance described below.
+Inside Immich, **Administration → Settings → Job Settings** has the concurrency for **Smart Search, Face Detection, Video Conversion and Thumbnail Generation** set to **1**. The Docker limits are the seatbelt (a hard ceiling Immich can't break through), and the concurrency is the speed limit (Immich doesn't try to do everything at once in the first place).
 
 The limits only slow Immich's background jobs down. Uploads, browsing and search keep working, and a big backlog just takes longer to finish instead of taking the whole NAS down with it (see the troubleshooting log).
 
 ### Update: machine learning moved to ShineoriServer
 
-The limits stopped the overload, but on a 7.5 GB NAS even a capped ML container can still take 2 GB during big jobs. Immich lets the ML part run on **a different machine**, so it now runs on my ShineoriServer (31 GB of RAM). The photos, the database and the Immich server all stay on the NAS:
+The limits stopped the overload, but on a 7.5 GB NAS even a capped ML container can still take 2 GB during big jobs. Immich lets the ML part run on **a different machine**, so it now runs on my laptop server, ShineoriServer (31 GB of RAM). The photos, the database and the Immich server all stay on the NAS:
 
 ```
 Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (ShineoriServer)
