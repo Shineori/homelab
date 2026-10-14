@@ -99,7 +99,7 @@ Deep dives with architecture, security decisions, troubleshooting and lessons le
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Ollama + Open WebUI + SearXNG](services/ollama-stack.md) | ShineoriServer | 🟢 | Local LLM stack with private web search |
-| [Hermes Agent](services/hermes-agent.md) | ShineoriServer | 🟢 running | Open-source local AI agent for diagnosing problems and automating tasks |
+| [Hermes Agent](services/hermes-agent.md) | ShineoriServer | 🟢 | Local AI agent that helps me maintain this docs repo, behind layered guardrails |
 
 ### Security labs
 
