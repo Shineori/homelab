@@ -1,21 +1,17 @@
-# Immich machine learning on the laptop's RTX 2060, for the NAS's Immich server
+# Immich machine learning on ShineoriServer (CPU-only), for the NAS's Immich server
 services:
   immich-machine-learning:
     container_name: immich_machine_learning
-    # must match the NAS's Immich version exactly; -cuda = NVIDIA GPU build
-    image: ghcr.io/immich-app/immich-machine-learning:v3.3.1-cuda
+    # must match the NAS's Immich version exactly; CPU build (no -cuda)
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.1
+    environment:
+      - MACHINE_LEARNING_MODEL_TTL=300   # cache models for 5 minutes, then discard
     volumes:
       - model-cache:/cache            # downloaded AI models live here
     ports:
       - "<LAN_IP>:3003:3003"       # LAN only, for the NAS to reach it
     restart: unless-stopped
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    cpus: "3"                 # 3 cores
 
 volumes:
   model-cache:
