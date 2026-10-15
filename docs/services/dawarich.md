@@ -83,6 +83,6 @@ flowchart LR
 ## What I learned
 
 - **Named volumes vs bind mounts:** where a container keeps its data decides how you back it up and move it. `docker volume ls` first, always.
-- **PostGIS:** a database can understand geography, not just numbers and text
+- **PostGIS:** a database can understand geography as well as numbers and text
 - **Host allow-lists:** web frameworks like Rails refuse requests for hostnames they weren't told about, which blocks a class of attacks but needs updating when a server moves
 - **OIDC flows are tied to addresses:** the redirect URI and the login cookie both depend on the hostname, so mixing an IP and a domain breaks the login

@@ -25,7 +25,7 @@ flowchart LR
 
 ## ⭐ Featured write-ups
 
-Deep dives with architecture, security decisions, troubleshooting and lessons learned:
+Full write-ups with architecture, security decisions, troubleshooting and lessons learned:
 
 | Write-up | Highlights |
 |---|---|

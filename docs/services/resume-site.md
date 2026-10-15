@@ -90,7 +90,7 @@ Desktop behaves exactly as before.
 | 2026-10-11 | Tapping the prompt on an iPhone zoomed the page | iOS auto-zooms inputs under 16px | 16px input font on phones |
 | 2026-10-11 | Keyboard covered the output after tapping a command button | Button handler always called `input.focus()` | Skip focus on touch devices |
 | 2026-10-11 | Updated contact info didn't show on the site, even after purging Cloudflare's cache | The server *was* serving the new `script.js`, but nginx tells browsers to keep JS for a day (`expires 1d`), and purging Cloudflare doesn't clear a visitor's own browser cache | Added version numbers to the file links in `index.html` (`script.js?v=3`). A new number makes every browser fetch the file fresh. |
-| 2026-10-11 | The mobile fixes on this page weren't actually on the live site | The changes were written up but never made it into the live files | Applied all five, then tested desktop and iPhone SE sizes in a headless browser: every check passed, no JS errors. Lesson: verify the live site, not just the write-up. |
+| 2026-10-11 | The mobile fixes on this page weren't actually on the live site | The changes were written up but never made it into the live files | Applied all five, then tested desktop and iPhone SE sizes in a headless browser: every check passed, no JS errors. Lesson: check the live site itself. |
 
 ## What I learned
 
