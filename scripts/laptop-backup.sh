@@ -26,7 +26,7 @@ if ! flock -n 9; then log "already running, exiting"; exit 0; fi
 log "== backup start"
 rm -rf "$STAGE"; mkdir -p "$STAGE"; chmod 700 "$STAGE"
 
-# 1) Dawarich: consistent PostgreSQL dump while it keeps running, then sanity-check it
+# 1) Dawarich: consistent PostgreSQL dump while it keeps running, then check it
 docker exec dawarich_db pg_dump -U postgres -Fc dawarich_development > "$STAGE/dawarich.dump"
 docker exec -i dawarich_db pg_restore --list < "$STAGE/dawarich.dump" > /dev/null
 log "dawarich dump: $(du -h "$STAGE/dawarich.dump" | cut -f1), readable"

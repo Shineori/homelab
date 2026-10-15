@@ -19,7 +19,7 @@ Nous Research's Hermes Agent can read and edit files, run commands, use git, tal
 
 **Where it ended up:** after testing, I decided to keep a cloud assistant for editing this repo, since that work needs careful multi-step accuracy. Hermes found a better job: **Update Scout**. When [Diun](diun.md) spots a new version of one of my pinned images, Hermes reads the release notes between my version and the new one and posts a short verdict in Discord: 🟢 safe bump, 🟡 read first, or 🔴 migration needed. That's read-and-summarize work, which a small local model handles well.
 
-The catch: an agent that can run commands on a server full of my services and secrets is a real risk, and now it also listens to Discord and a webhook. So most of this page is about the guardrails.
+The problem: an agent that can run commands on a server full of my services and secrets is a real risk, and now it also listens to Discord and a webhook. So most of this page is about the guardrails.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ flowchart LR
 | **update-scout skill** | The instructions: find my current version, run the fetch script, read the digest, write the verdict |
 | **fetch_releases.py** | A small Python script that pulls every GitHub release between two versions and keeps only the upgrade-relevant lines |
 | **Ollama** | The model server (systemd service on port 11432), shared with the [Ollama stack](ollama-stack.md) |
-| **qwen3.6 35B-A3B** | The model. A custom Modelfile (`qwen3.6-hermes`) bakes in a 64K context window, which Hermes requires |
+| **qwen3.6 35B-A3B** | The model. A custom Modelfile (`qwen3.6-hermes`) sets a 64K context window, which Hermes requires |
 | **Repo clone** | Hermes reads my pinned versions from its own copy of this repo. It can't push |
 
 ### Picking a model that fits

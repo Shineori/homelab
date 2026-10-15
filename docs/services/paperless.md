@@ -65,4 +65,4 @@ flowchart LR
 ## What I learned
 
 - **OCR pipelines:** a watched "consume" folder turns a scanner into an automatic filing system
-- **The difference between running and protected:** an app holding irreplaceable data needs a backup plan, not just uptime
+- **The difference between running and protected:** uptime doesn't protect irreplaceable data, backups do

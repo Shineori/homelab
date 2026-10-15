@@ -68,5 +68,5 @@ flowchart LR
 ## What I learned
 
 - **Network isolation in Docker:** separate networks, a dedicated VPN exit and host firewall rules for untrusted containers
-- **Some features carry built-in risk:** an app that creates containers needs the Docker socket, and the honest response is to document it and limit exposure
+- **Some features carry built-in risk:** an app that creates containers needs the Docker socket, so I document it and limit exposure
 - **Migrating a stack between machines** (Windows PC to the NAS)

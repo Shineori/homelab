@@ -111,7 +111,7 @@ Diun only tells me; I do the update by hand:
 
 Rolling back is putting the old tag back, **unless** the new version migrated the app's database. That's why step 3 comes before step 5.
 
-**Gotchas I've hit:**
+**Problems I've hit:**
 
 - **Version labels aren't always versions.** Homarr's label said `main` (a code branch). Comparing the image's build date with the release dates told me which version it really was.
 - **Images on `:latest` update themselves** whenever their stack restarts. SearXNG was already on the version Diun announced, so I pinned it.

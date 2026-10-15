@@ -45,7 +45,7 @@ flowchart LR
 | **Encrypted** (restic repository password) | A stolen or discarded disk is useless without it. The password is stored in my vault *and* on paper, because if the vault is what I need to restore, I can't look the password up in it. |
 | **Deduplicated** | Nightly runs only store what changed. The first run was 2.3 GiB, and later runs add a few MiB. |
 | **Retention: 7 daily, 4 weekly, 6 monthly** | I can go back in time, for example to before a bad update corrupted something |
-| **Verifies itself nightly** | `restic check --read-data-subset=5%` proves the stored data is still readable, not just present |
+| **Verifies itself nightly** | `restic check --read-data-subset=5%` proves the stored data can still be read back |
 | **Fails loudly** | An `ERR` trap sends a Discord alert. Silent backup failure is how people lose data. |
 | **No secrets in arguments** | The Discord webhook reaches `curl` through stdin, never the command line (a lesson from my [auditd script](../services/security-monitoring.md)) |
 | **Plaintext staging is deleted** | The temporary vault snapshot is removed after backup, and also on failure (via the trap) |
