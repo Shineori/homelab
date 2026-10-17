@@ -91,7 +91,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Terraria (tModLoader)](docs/services/terraria.md) | ShiNAS | ⚫ | Modded Terraria server for friends, public via playit.gg |
-| [Minecraft + playit](docs/services/minecraft.md) | ShineoriServer | 🟢 | Minecraft server with playit.gg tunnel |
+| [Minecraft + playit](docs/services/minecraft.md) | ShineoriServer | 🟢 | Java + Bedrock (Geyser) Minecraft server, playit.gg tunnels |
 | [The Forest dedicated server](docs/services/the-forest.md) | Windows PC | ⚫ | Vanilla The Forest dedicated server reached over Tailscale |
 
 ### AI
