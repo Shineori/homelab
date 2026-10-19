@@ -1,6 +1,8 @@
 # =============================================================
 #  <redacted-domain>  |  Shineori SMP (Java + Bedrock)
-#    - mc     : Paper server (Java 25565/tcp, Bedrock 19132/udp)
+#    - mc     : Fabric server (Java 25565/tcp, Bedrock 19132/udp)
+#               Geyser + Floodgate (Fabric) for Bedrock, NetherNet via Warden
+#               BlueMap web map on 8100/tcp (LAN port; published through the NAS's tunnel)
 #    - playit : tunnel agent, exposes both to the internet
 #  No router port-forward or DDNS needed.
 # =============================================================
@@ -9,36 +11,41 @@ services:
   mc:
     image: itzg/minecraft-server:latest   # if logs show UnsupportedClassVersionError, use :java25
     container_name: shineori-mc
+    env_file:
+      - rcon.env                 # RCON_PASSWORD shared with my Discord bot (chmod 600, never committed)
+    networks:
+      - default
+      - mc-bridge                # the bot reaches RCON here; port 25575 is never published
     tty: true
     stdin_open: true
     restart: unless-stopped
     environment:
       EULA: "TRUE"
-      TYPE: "PAPER"
-      VERSION_FROM_MODRINTH_PROJECTS: "true"   # newest MC version all plugins support
+      TYPE: "FABRIC"
+      VERSION: "26.3"   # pinned: world is on 26.3 (auto-resolve failed with geyser/floodgate)
       MODRINTH_PROJECTS: |
-        luckperms
-        essentialsx
-        coreprotect
-        griefprevention
+        fabric-api
+        polymer
+        polydecorations
+        geyser
+        floodgate
+        bluemap
         chunky
-        viaversion
-        viabackwards
-      # Bedrock support (Geyser + Floodgate), straight from GeyserMC
-      PLUGINS: |
-        https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
-        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+      MODRINTH_ALLOWED_VERSION_TYPE: "beta"   # Geyser/Floodgate only publish beta builds on Modrinth
       MEMORY: "6G"
       DIFFICULTY: "normal"
+      LEVEL: "Brrr"
+      SEED: "<redacted>"
       MOTD: "<redacted-domain> | Shineori SMP"
-      MAX_PLAYERS: "10"
+      MAX_PLAYERS: "12"
       ONLINE_MODE: "TRUE"          # keep TRUE: tunnel is public, only legit accounts
       ENABLE_WHITELIST: "TRUE"     # extra important with a public tunnel
       OPS: "Shineori"
       TZ: "America/New_York"
     ports:
       - "25565:25565"              # Java (playit tunnel -> <LAN_IP>:25565)
-      - "19132:19132/udp"          # Bedrock via Geyser (playit tunnel -> <LAN_IP>:19132)
+      - "19132:19132/udp"          # Bedrock via Geyser (playit UDP tunnel -> <LAN_IP>:19132)
+      - "8100:8100"                # BlueMap web map (LAN port)
     volumes:
       - ./mc-data:/data
     healthcheck:
@@ -56,3 +63,7 @@ services:
       SECRET_KEY: <redacted>
     depends_on:
       - mc
+
+networks:
+  mc-bridge:
+    external: true   # created once: sudo docker network create mc-bridge
