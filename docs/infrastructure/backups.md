@@ -169,7 +169,7 @@ flowchart LR
 | | |
 |---|---|
 | **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Homarr, plus each app's compose file and `.env` |
-| **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (for now) |
+| **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (it has [its own daily backup](minecraft-backups.md)) |
 | **Schedule** | Laptop nightly at 04:15, after the NAS's own 03:30 run so they don't compete for the disk. NAS cleanup Sundays at 05:00. |
 | **Scripts** | [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh) on the laptop, [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) on the NAS |
 | **Backup server** | [`stacks/restic-server/`](https://github.com/shineori/homelab/tree/main/stacks/restic-server), bound to the NAS's LAN IP |

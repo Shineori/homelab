@@ -120,4 +120,5 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 - [Network & remote access](infrastructure/network.md)
 - [Single sign-on](infrastructure/sso.md)
 - [Backups](infrastructure/backups.md)
+- [Minecraft world backups](infrastructure/minecraft-backups.md)
 - [Alerting & email](infrastructure/alerting.md)
