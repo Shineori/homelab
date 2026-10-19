@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Game servers |
 | **Status** | 🟢 running |
-| **Exposed?** | playit.gg tunnels (no open ports, home IP hidden) + Warden signaling for Bedrock. Web map through the NAS's Cloudflare Tunnel, behind Cloudflare Access |
+| **Exposed?** | playit.gg tunnels (no open ports, home IP hidden) + Warden signaling for Bedrock. Web map is public (read-only) through the NAS's Cloudflare Tunnel |
 | **Server** | Fabric, Minecraft 26.3 (pinned), 6 GB RAM, whitelist on, Java + Bedrock |
 | **Backups** | Daily, change-aware, archived to the NAS ([details](../infrastructure/minecraft-backups.md)) |
 
@@ -31,7 +31,7 @@ flowchart LR
     udp --> agent
     agent -->|:25565| mc[Fabric server<br/>+ mods]
     agent -->|:19132 UDP| mc
-    viewer([Map viewers]) -->|Cloudflare Access login| cf[NAS's Cloudflare Tunnel]
+    viewer([Anyone with the link]) -->|HTTPS| cf[NAS's Cloudflare Tunnel]
     cf -->|:8100 over LAN| mc
     bot([My Discord bot]) -->|RCON on private<br/>Docker network| mc
     mc --> world[(./mc-data<br/>world + configs)]
@@ -65,7 +65,7 @@ flowchart LR
 | **Beta builds allowed only because Geyser needs them** | Geyser and Floodgate publish only beta builds on Modrinth. I accepted that for the whole mod list, so I keep the list short |
 | **RCON never published** | Port 25575 isn't in `ports:`. Only containers on the private `mc-bridge` network can reach it |
 | **RCON password in a `chmod 600` env file** | Shared between the server and my bot, never in the compose file or this repo |
-| **Web map behind Cloudflare Access** | The map shows where everyone's builds are, so only emails on my allow-list can open it. It goes out through the NAS's tunnel, so no extra ports are open |
+| **Web map public on purpose, through the tunnel** | It's a read-only view of the world, so anyone can look at it without a login. It goes out through the NAS's Cloudflare Tunnel, so no ports are open and my home IP stays hidden. The trade-off: anyone with the link can see where our builds are |
 | **Warden for Bedrock signaling** | Avoids needing a public TCP port for NetherNet, and gives players HTTPS so they don't get a "trust on first use" prompt |
 | **playit agent secret in `.env`** | The tunnel key stays out of the compose file and out of this repo |
 | **Op kept to me** (`OPS` in the compose file) | Friends play as normal players. Only my account can run admin commands |
@@ -84,7 +84,7 @@ flowchart LR
     - `java.auth-type: floodgate`
 6. Claim the instance in the Warden panel (link is printed in the Geyser log), add a custom domain, and create the CNAME it asks for in Cloudflare (DNS only, grey cloud)
 7. DNS: SRV `_minecraft._tcp.<name>` to the playit Java tunnel, CNAME `<name>` to Warden. Java players type the name, Bedrock players type the name with port `443`
-8. Web map: on the NAS's tunnel, add a route from the map's hostname to `http://<server LAN IP>:8100`, then a Cloudflare Access application with an email allow-list in front of it
+8. Web map: on the NAS's tunnel, add a public hostname route to `http://<server LAN IP>:8100`. To lock it down later, put a Cloudflare Access application with an email allow-list in front of it
 9. Pre-generate: `docker exec shineori-mc rcon-cli chunky start` (check with `chunky progress`, pause with `chunky pause`)
 10. Whitelist: `docker exec -i shineori-mc rcon-cli whitelist add <name>` (Java) or `... fwhitelist add <gamertag>` (Bedrock)
 11. Settings set in the compose file win. The image rewrites `server.properties` from its environment variables on startup, so change those there, not in `server.properties`
@@ -109,7 +109,7 @@ flowchart LR
 - [x] Pin the Minecraft version ✅ *Done:* `VERSION: "26.3"`
 - [ ] Pin the server and playit **images** instead of `:latest`
 - [ ] Pin Geyser/Floodgate to known-good builds, so a bad beta can't break Bedrock on restart
-- [ ] Decide whether the web map stays behind Cloudflare Access or opens to anyone
+- [ ] Put the web map behind Cloudflare Access (email allow-list) if showing build locations publicly ever becomes a problem
 - [ ] Add proximity voice chat and a minimap (the reasons I moved to Fabric)
 - [ ] Bind `:25565` and `:8100` to the LAN IP only, so other devices can't reach them on unexpected interfaces
 - [ ] Get real player IPs in the logs (playit Proxy Protocol plus a Fabric mod that understands it)
