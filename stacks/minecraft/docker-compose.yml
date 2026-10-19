@@ -45,6 +45,8 @@ services:
         jade
         terralith
         lithostitched
+        jei
+        mezzconfig
       MODRINTH_ALLOWED_VERSION_TYPE: "beta"   # Geyser/Floodgate only publish beta builds on Modrinth
       # scalablelux + c2me-fabric are pinned to alpha version IDs (only 26.3 builds); bump them when VERSION changes
       # no comments inside the MODRINTH_PROJECTS block: they'd be read as part of the mod name

@@ -48,7 +48,7 @@ flowchart LR
 | **Chunky** | Pre-generates the world ahead of time, so exploring doesn't lag the server and the map has terrain to show |
 | **Performance mods** | Lithium (game logic), FerriteCore (RAM), Krypton (networking), ScalableLux (lighting), C2ME (chunk loading and generation), plus spark to profile lag. None of them change gameplay |
 | **Open Parties and Claims** | Friends can claim land and form parties, so builds are protected from griefing and accidents. Works for vanilla clients through commands, and shows claims on the minimap for friends using the client pack |
-| **Gameplay helpers** | NetherPortalFix (portals link back to the one you came from), AppleSkin and Jade (send food and block info to friends who have them installed), Terralith (new terrain generation for chunks that haven't been explored yet) |
+| **Gameplay helpers** | NetherPortalFix (portals link back to the one you came from), JEI (sends the server's real recipes to friends' recipe viewer), AppleSkin and Jade (send food and block info to friends who have them installed), Terralith (new terrain generation for chunks that haven't been explored yet) |
 | **Client pack** | An optional `.mrpack` for Java friends: Sodium, Xaero's Minimap and World Map, JEI, Jade, AppleSkin and the claims UI. Vanilla clients and Bedrock players can still join without it |
 | **playit agent** | Runs as a container next to the server. Dials out to playit.gg, which relays traffic back in. One TCP tunnel for Java, one plain UDP tunnel for Bedrock gameplay |
 | **Warden** | Free external signaling service for NetherNet (Bedrock's new networking). Bedrock clients ask Warden over HTTPS how to connect, then connect straight to my UDP tunnel. Warden never carries game traffic |
@@ -114,6 +114,7 @@ flowchart LR
 | 2026-10 | Wanted Sodium on the server for performance | Sodium is a rendering mod. A server doesn't render anything, so it does nothing there | Put Sodium in the client pack instead, and used Lithium, FerriteCore, Krypton, ScalableLux and C2ME on the server |
 | 2026-10 | ScalableLux and C2ME wouldn't resolve under the beta channel | Their only 26.3 builds are alphas | Pinned both by Modrinth version ID instead of allowing alphas for every mod |
 | 2026-10 | Comments I added next to mods in the list would have broken the download | Inside a YAML `\|` block, `#` is plain text, so the comment becomes part of the mod name | Moved the comments outside the block, then parsed the file with Python to confirm the list was clean |
+| 2026-10 | JEI warned on join: "This fabric server does not have JEI installed" and showed default recipes | I only put JEI in the client pack. Newer Minecraft versions don't send every recipe to the client, so JEI needs a server-side copy to read the real ones | Added `jei` and its required library `mezzconfig` to the server's mod list |
 | 2026-10 | Several new mods need libraries I didn't list | Open Parties and Claims, NetherPortalFix and Terralith each have a required dependency | Looked up each mod's required dependencies on Modrinth and added Forge Config API Port, Balm and Lithostitched |
 
 ## What I'd harden next
