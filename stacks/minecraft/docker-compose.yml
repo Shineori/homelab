@@ -31,7 +31,23 @@ services:
         floodgate
         bluemap
         chunky
+        lithium
+        ferrite-core
+        krypton
+        spark
+        scalablelux:g4eqNSKd
+        c2me-fabric:gKKkuSYc
+        open-parties-and-claims
+        forge-config-api-port
+        netherportalfix
+        balm
+        appleskin
+        jade
+        terralith
+        lithostitched
       MODRINTH_ALLOWED_VERSION_TYPE: "beta"   # Geyser/Floodgate only publish beta builds on Modrinth
+      # scalablelux + c2me-fabric are pinned to alpha version IDs (only 26.3 builds); bump them when VERSION changes
+      # no comments inside the MODRINTH_PROJECTS block: they'd be read as part of the mod name
       MEMORY: "6G"
       DIFFICULTY: "normal"
       LEVEL: "Brrr"
