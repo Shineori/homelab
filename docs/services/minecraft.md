@@ -85,7 +85,7 @@ flowchart LR
 
 ## What I'd harden next
 
-- [ ] Automated nightly backups of `./mc-data` (tonight's upgrade had no backup until I made one mid-fix)
+- [x] Automated daily backups of the world ✅ *Done:* skips quiet days, keeps 5 locally, archives older ones to the NAS ([details](../infrastructure/minecraft-backups.md))
 - [ ] Pin the server and playit images instead of `:latest`
 - [ ] Pin Geyser/Floodgate to known-good builds instead of `latest`
 - [ ] Move to 26.3 once every plugin supports it (automatic on restart thanks to `VERSION_FROM_MODRINTH_PROJECTS`)
