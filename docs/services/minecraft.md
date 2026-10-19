@@ -46,6 +46,10 @@ flowchart LR
 | **Geyser + Floodgate (Fabric)** | Geyser translates Bedrock to Java. Floodgate lets Bedrock players join without a Java account |
 | **BlueMap** | Renders the world into a 3D map you can open in a browser, served on port 8100 |
 | **Chunky** | Pre-generates the world ahead of time, so exploring doesn't lag the server and the map has terrain to show |
+| **Performance mods** | Lithium (game logic), FerriteCore (RAM), Krypton (networking), ScalableLux (lighting), C2ME (chunk loading and generation), plus spark to profile lag. None of them change gameplay |
+| **Open Parties and Claims** | Friends can claim land and form parties, so builds are protected from griefing and accidents. Works for vanilla clients through commands, and shows claims on the minimap for friends using the client pack |
+| **Gameplay helpers** | NetherPortalFix (portals link back to the one you came from), AppleSkin and Jade (send food and block info to friends who have them installed), Terralith (new terrain generation for chunks that haven't been explored yet) |
+| **Client pack** | An optional `.mrpack` for Java friends: Sodium, Xaero's Minimap and World Map, JEI, Jade, AppleSkin and the claims UI. Vanilla clients and Bedrock players can still join without it |
 | **playit agent** | Runs as a container next to the server. Dials out to playit.gg, which relays traffic back in. One TCP tunnel for Java, one plain UDP tunnel for Bedrock gameplay |
 | **Warden** | Free external signaling service for NetherNet (Bedrock's new networking). Bedrock clients ask Warden over HTTPS how to connect, then connect straight to my UDP tunnel. Warden never carries game traffic |
 | **`mc-bridge` network** | A private Docker network shared with my Discord bot, so the bot can run RCON commands without RCON ever being published |
@@ -62,7 +66,10 @@ flowchart LR
 | **Mods pulled by the container from Modrinth** | The mod list lives in the compose file, so it's versioned and reviewable instead of random jars dropped in a folder |
 | **Server-side-only mods** (Polymer) | Friends never have to download and run mod files from me, which keeps their computers out of my trust boundary |
 | **Minecraft version pinned to 26.3** | The world is on 26.3, and an update can't move it to a version the mods don't support yet |
-| **Beta builds allowed only because Geyser needs them** | Geyser and Floodgate publish only beta builds on Modrinth. I accepted that for the whole mod list, so I keep the list short |
+| **Beta builds allowed only because Geyser needs them** | Geyser and Floodgate publish only beta builds on Modrinth. I accepted that for the whole mod list, so I check each new mod's build before adding it |
+| **Two alpha mods pinned to exact builds** | ScalableLux and C2ME only have alpha builds for 26.3. I pinned those two by version ID instead of loosening the release channel for the whole list |
+| **Client pack is optional, not required** | Nothing on the server forces a client mod, so friends who don't want to run extra jars can still play vanilla. The pack only points at files hosted on Modrinth, each one checked by hash |
+| **Land claims on** | Open Parties and Claims protects builds from griefing or accidents, a second layer on top of the whitelist |
 | **RCON never published** | Port 25575 isn't in `ports:`. Only containers on the private `mc-bridge` network can reach it |
 | **RCON password in a `chmod 600` env file** | Shared between the server and my bot, never in the compose file or this repo |
 | **Web map public on purpose, through the tunnel** | It's a read-only view of the world, so anyone can look at it without a login. It goes out through the NAS's Cloudflare Tunnel, so no ports are open and my home IP stays hidden. The trade-off: anyone with the link can see where our builds are |
@@ -88,6 +95,8 @@ flowchart LR
 9. Pre-generate: `docker exec shineori-mc rcon-cli chunky start` (check with `chunky progress`, pause with `chunky pause`)
 10. Whitelist: `docker exec -i shineori-mc rcon-cli whitelist add <name>` (Java) or `... fwhitelist add <gamertag>` (Bedrock)
 11. Settings set in the compose file win. The image rewrites `server.properties` from its environment variables on startup, so change those there, not in `server.properties`
+12. Adding a mod: check it has a Fabric build for the pinned version first (`https://api.modrinth.com/v2/project/<slug>/version?loaders=["fabric"]&game_versions=["26.3"]`), and add its **required** dependencies to the list too. If only an alpha exists, pin it as `<slug>:<version-id>`. Never put `#` comments inside the `MODRINTH_PROJECTS` block
+13. Client pack: a `.mrpack` built from `modrinth.index.json` (Modrinth download links plus SHA-1/SHA-512 hashes, `minecraft` and `fabric-loader` versions matching the server) and an `overrides/servers.dat` that pre-adds the server. Friends import it in the Modrinth App or Prism Launcher. Rebuild it whenever the Minecraft version changes
 
 ## Troubleshooting log
 
@@ -102,6 +111,10 @@ flowchart LR
 | 2026-10 | Fabric: the server picked a Minecraft version the Bedrock mods couldn't load on | Letting the image auto-resolve the version didn't line up with the Geyser and Floodgate builds | Pinned `VERSION: "26.3"` to match the world |
 | 2026-10 | Fabric: Geyser and Floodgate wouldn't download | They only publish **beta** builds on Modrinth, and the image only accepts releases by default | `MODRINTH_ALLOWED_VERSION_TYPE: "beta"` |
 | 2026-10 | The server had problems and the world had to start over | | Kept the old world aside as `Brrr.broken-2026-10-18` instead of deleting it, and started fresh |
+| 2026-10 | Wanted Sodium on the server for performance | Sodium is a rendering mod. A server doesn't render anything, so it does nothing there | Put Sodium in the client pack instead, and used Lithium, FerriteCore, Krypton, ScalableLux and C2ME on the server |
+| 2026-10 | ScalableLux and C2ME wouldn't resolve under the beta channel | Their only 26.3 builds are alphas | Pinned both by Modrinth version ID instead of allowing alphas for every mod |
+| 2026-10 | Comments I added next to mods in the list would have broken the download | Inside a YAML `\|` block, `#` is plain text, so the comment becomes part of the mod name | Moved the comments outside the block, then parsed the file with Python to confirm the list was clean |
+| 2026-10 | Several new mods need libraries I didn't list | Open Parties and Claims, NetherPortalFix and Terralith each have a required dependency | Looked up each mod's required dependencies on Modrinth and added Forge Config API Port, Balm and Lithostitched |
 
 ## What I'd harden next
 
@@ -110,7 +123,12 @@ flowchart LR
 - [ ] Pin the server and playit **images** instead of `:latest`
 - [ ] Pin Geyser/Floodgate to known-good builds, so a bad beta can't break Bedrock on restart
 - [ ] Put the web map behind Cloudflare Access (email allow-list) if showing build locations publicly ever becomes a problem
-- [ ] Add proximity voice chat and a minimap (the reasons I moved to Fabric)
+- [x] Add a minimap ✅ *Done:* Xaero's Minimap and World Map in the optional client pack, with land claims shown on the map
+- [x] Server performance mods ✅ *Done:* Lithium, FerriteCore, Krypton, ScalableLux, C2ME, spark
+- [ ] Add proximity voice chat (the other reason I moved to Fabric)
+- [ ] Run a spark profile during normal play to see what the performance mods actually changed
+- [ ] Swap the two pinned alphas (ScalableLux, C2ME) for releases once they exist for 26.3
+- [ ] Keep the client pack's build script in this repo, with the server address passed in when it runs instead of saved in the file
 - [ ] Bind `:25565` and `:8100` to the LAN IP only, so other devices can't reach them on unexpected interfaces
 - [ ] Get real player IPs in the logs (playit Proxy Protocol plus a Fabric mod that understands it)
 - [ ] Get the old compose file backups and `.env` owned by my user instead of root, so edits don't need sudo
@@ -125,4 +143,8 @@ flowchart LR
 - **SRV vs CNAME:** Java follows SRV records, Bedrock ignores them, so one name can serve both editions with two different record types
 - **NetherNet:** Bedrock's new networking uses an HTTPS "signaling" step before WebRTC gameplay, which is why a UDP-only tunnel stopped being enough
 - **Layered access control:** authentication (online mode) plus authorization (whitelists) plus least privilege (op only for me, RCON on a private network)
+- **Client vs server mods:** some mods only matter where the game is drawn (Sodium), some only where it runs (Lithium, C2ME), and some work best on both (Jade, AppleSkin). Modrinth lists this for every project
+- **Dependencies aren't automatic in a plain list:** each mod's required libraries have to be on the list too, or the server won't start
+- **YAML block strings are literal:** a `#` inside a `|` block is text, not a comment
+- **A modpack is mostly a manifest:** a `.mrpack` is a zip with links and hashes, so the launcher downloads the real files from Modrinth and checks them, instead of me handing out jars
 - **Keep the broken copy:** moving a damaged world aside instead of deleting it keeps the option to recover things later
