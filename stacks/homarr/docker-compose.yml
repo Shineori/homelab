@@ -1,7 +1,7 @@
 services:
   hommarr:
     container_name: homarr
-    image: ghcr.io/homarr-labs/homarr:v2.5.2
+    image: ghcr.io/homarr-labs/homarr:v2.7.0
     restart: unless-stopped
     volumes:
       - ./appdata:/appdata

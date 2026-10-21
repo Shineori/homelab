@@ -34,7 +34,7 @@ flowchart LR
 | Container | Job |
 |---|---|
 | `web` | The app: UI, API and the background workers |
-| `chrome` | A headless Chrome browser that opens each saved link to grab its content and a screenshot |
+| `chrome` | Karakeep's own Chrome image (`karakeep-chrome`). It opens each saved link to grab its content and a screenshot, and is tuned to get blocked by bot protection less often. |
 | `meilisearch` | The search engine that makes saved pages searchable |
 | **Ollama** (outside the stack) | Runs the language models that suggest tags and summaries |
 
@@ -48,7 +48,7 @@ flowchart LR
 | **Local AI only** | Tagging and summaries run on my own Ollama, so the pages I save never leave my lab |
 | **Secrets in a git-ignored `.env`** | `NEXTAUTH_SECRET` and `MEILI_MASTER_KEY`. The repo only has a blanked `.env.example`. |
 | **`NEXTAUTH_URL` = the public hostname** | The login system builds its links and redirects from this address |
-| **Pinned versions** | The app by digest, Meilisearch `v1.41.0` (the version Karakeep recommends), Chrome `124` |
+| **Pinned versions** | The app at `0.34.0`, Meilisearch `v1.41.0` (the version Karakeep recommends), and `karakeep-chrome` by digest |
 
 ## Setup notes
 
@@ -67,18 +67,21 @@ flowchart LR
 | 2026-10-11 | Port 3000 was already taken on the new machine | Open WebUI uses 3000 there | Published Karakeep on **3010** instead (`3010:3000`) and updated the tunnel route |
 | 2026-10-11 | `NEXTAUTH_URL` was `http://localhost:3000` | A wrong value from the original setup, found during the move | Set it to the public hostname |
 | 2026-10-13 | Diun announced Meilisearch `v1.55.0`, but I was on `v1.13.3` | Meilisearch's data files are tied to its version, so a big jump can refuse to open the old index. And the newest release isn't necessarily one Karakeep supports. | Checked Karakeep's docs: they recommend **`v1.41.0`**. Followed their procedure: stopped Meilisearch, set the old `data.ms` aside, started `v1.41.0` empty, then ran **Admin → Background Jobs → Reindex All Bookmarks**. All bookmarks were re-indexed with no errors. |
+| 2026-10-21 | Upgrading 0.33.2 to 0.34.0, but the app was pinned by digest, so I couldn't tell which version I was on | A digest hides the version number | Compared my digest against the registry's digest for each release tag: it matched `0.33.2`. Read the upgrade notes: everyone gets signed out once (new session system), emails get lowercased, and Karakeep asks everyone to move to its own `karakeep-chrome` image. Backed up the stopped stack and volumes, switched the pin to `0.34.0`, swapped Chrome to `karakeep-chrome` with their recommended flags, then confirmed `/api/health` answered OK. Meilisearch stayed on `v1.41.0`, still what Karakeep's own compose file uses. |
 
 ## What I'd harden next
 
 - [x] **Backed up** ✅ *Done:* the `data` volume and `.env` are in the laptop's nightly backup ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
 - [ ] Log in through [Authentik](authentik.md)
-- [ ] Re-enable Diun for the Chrome image now that it's on Docker Hub
+- [x] **Re-enabled Diun for the Chrome image** ✅ *Done:* the `diun.enable=false` label went away with the switch to `karakeep-chrome`
+- [ ] Test a few sites that used to fail, to see if the new crawler gets through
 
 ## What I learned
 
 - **Multi-container apps:** a "simple" bookmark app is really a web app, a headless browser, a search engine and an AI model working together
 - **Images can disappear:** an image that ran fine for months became impossible to download, and I only found out when I moved the app
 - **The newest version isn't always the right version:** for a dependency like Meilisearch, the app (Karakeep) decides which version to run, not the update notifier
+- **Version numbers beat digests for reading:** a digest is perfect for safety but tells you nothing at a glance, so I now pin a real version tag where the app publishes one
 - **Rebuildable vs irreplaceable data:** the search index can be thrown away and rebuilt from the bookmarks, which made a risky upgrade simple
 - **Ports are a shared resource:** two apps on one machine can't both publish the same port, but the container can keep its internal port (`3010:3000`)
 - **Keep AI local when the data is personal:** what I read says a lot about me, so the tagging runs on my own GPU

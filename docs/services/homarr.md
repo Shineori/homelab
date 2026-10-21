@@ -41,7 +41,7 @@ Homarr keeps two separate kinds of records, which tripped me up once (see the tr
 |---|---|
 | **LAN only** | A dashboard is a map of my whole lab, so it stays off the internet |
 | **`SECRET_ENCRYPTION_KEY` in a git-ignored `.env`** | Homarr encrypts the API keys and passwords saved in its integrations with this key. The repo only has a blanked `.env.example`. |
-| **Pinned to a version** (`v2.5.2`) | Updates only happen when I change the tag. It used to be pinned by digest, which was safe but hid which version I was running: the image's version label just said `main`. |
+| **Pinned to a version** (`v2.7.0`) | Updates only happen when I change the tag. It used to be pinned by digest, which was safe but hid which version I was running: the image's version label just said `main`. |
 | **Single sign-on through Authentik** | 🔵 Planned |
 
 ## Setup notes

@@ -3,9 +3,10 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     # must match the NAS's Immich version exactly; CPU build (no -cuda)
-    image: ghcr.io/immich-app/immich-machine-learning:v3.3.1
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.4
     environment:
       - MACHINE_LEARNING_MODEL_TTL=300   # cache models for 5 minutes, then discard
+      - MACHINE_LEARNING_MODEL_REVISION=v2   # optimized re-exports: faster, less RAM on CPU
     volumes:
       - model-cache:/cache            # downloaded AI models live here
     ports:
