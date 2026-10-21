@@ -8,7 +8,7 @@
 | **Category** | Media |
 | **Status** | 🟢 running |
 | **Exposed?** | Cloudflare Tunnel (no open ports) |
-| **Version** | v3.3.1 |
+| **Version** | v3.3.4 |
 | **Login** | Authentik SSO (OIDC), plus local password login as a fallback |
 
 Compose file: [`stacks/immich/`](https://github.com/shineori/homelab/tree/main/stacks/immich)
@@ -78,10 +78,11 @@ Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (
   photos + database stay here                  processes images, stores only model files
 ```
 
-- **On ShineoriServer:** [`stacks/immich-ml/`](https://github.com/shineori/homelab/tree/main/stacks/immich-ml) runs the same version tag as the server (`v3.3.1`), bound to the server's LAN IP only; CPU-only, 3-core cap, `MACHINE_LEARNING_MODEL_TTL=300`
+- **On ShineoriServer:** [`stacks/immich-ml/`](https://github.com/shineori/homelab/tree/main/stacks/immich-ml) runs the same version tag as the server (`v3.3.4`), bound to the server's LAN IP only; CPU-only, 3-core cap, `MACHINE_LEARNING_MODEL_TTL=300`, and `MACHINE_LEARNING_MODEL_REVISION=v2` (see below)
 - **In Immich:** Administration → Settings → Machine Learning points at the ShineoriServer instance
 - **On the NAS:** the ML service keeps its limits but sits behind `profiles: ["local-ml"]`, so it doesn't start unless I ask for it. Rolling back is one line.
-- **CPU-only processing:** switched to the plain `v3.3.1` image (no CUDA build) so the GPU stays free for Ollama and Hermes. Processing is slower, but it works reliably.
+- **CPU-only processing:** switched to the plain image (no `-cuda` build) so the GPU stays free for Ollama and Hermes. Processing is slower, but it works reliably.
+- **Optimized models (`MACHINE_LEARNING_MODEL_REVISION=v2`):** since v3.3.0, Immich publishes the *same* models re-exported in a faster, lighter format. The results are identical, so no jobs needed re-running, but CPU inference uses less memory and finishes sooner, which leaves more room for Ollama on the same machine. The only cost was a one-time model re-download.
 - **Version lock:** when Diun reports a new Immich release, I bump the tag to `vX.Y.Z` on **both** machines (no `-cuda` suffix now)
 - **If ShineoriServer is off,** smart search and face detection pause and catch up later. Uploads, browsing and backups keep working.
 
@@ -103,6 +104,7 @@ Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (
 | After adding `profiles: ["local-ml"]`, the NAS's ML container kept running | `docker compose up -d --remove-orphans` doesn't remove containers of profile-disabled services, because they're still part of the project | Stopped and removed it by hand once (`docker stop` + `docker rm`). With the profile set, it doesn't come back. |
 | Switching to the GPU image seemed to do nothing: the logs still said `CPUExecutionProvider` | The compose file was owned by root, so `cat > docker-compose.yml` failed with *Permission denied*. The old file stayed, and `up -d` just reported the container as running. | Wrote the file with `sudo tee` instead (`sudo` doesn't apply to a `>` redirect). The models load on the first request, so I sent a search to trigger them, then confirmed `CUDAExecutionProvider` in the logs and GPU memory use in `nvidia-smi`. |
 | Immich ML jobs started failing with an ONNX "Failed to allocate memory" error while the laptop GPU was also running Ollama | Both workloads competed for the same small GPU. Ollama held most of the memory, so the ONNX inference runtime had nothing left. A memory-reservation setting on Ollama didn't prevent the conflict. | Moved Immich ML back to CPU with a 3-core cap so the GPU belongs to Ollama exclusively. |
+| Upgrading v3.3.1 to v3.3.4: after editing the compose file and running `docker compose restart`, I wasn't sure the ML container had picked up the new image and the new env variable | `restart` only stops and starts the **existing** container. It doesn't swap in a newly pulled image or read compose/env changes. Only `docker compose up -d` recreates the container. | Ran `up -d`, then confirmed with `docker inspect` that it showed `v3.3.4` and `MACHINE_LEARNING_MODEL_REVISION=v2`. Also checked the server's `/api/server/version` endpoint so both halves were verified on the same version. Read the release notes first: two patch releases, bug fixes only, and the Postgres image unchanged. |
 
 ```
             BEFORE (no limits)             AFTER (capped)
@@ -114,7 +116,7 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 
 ## What I'd harden next
 
-- [x] **Pinned `IMMICH_VERSION`** ✅ *Done:* `v3.3.1` instead of a floating tag. I verified it was byte-identical to the running image first, so pinning changed nothing. [Diun](diun.md) now pings me in Discord when a new release ships, so upgrades happen on my schedule, after reading the release notes.
+- [x] **Pinned `IMMICH_VERSION`** ✅ *Done:* an exact version (now `v3.3.4`) instead of a floating tag. I verified it was byte-identical to the running image first, so pinning changed nothing. [Diun](diun.md) now pings me in Discord when a new release ships, so upgrades happen on my schedule, after reading the release notes.
 - [x] **Nightly encrypted backups** ✅ *Done:* the library plus Immich's own nightly database dumps (thumbnails excluded, since they're regenerable) go to an encrypted restic repository on a second disk. **The restore is tested:** the latest database dump came back intact. See [Backups](../infrastructure/backups.md).
 - [x] **Capped the machine-learning container** ✅ *Done:* `mem_limit: 2g` and `cpus: 1.5`, after it overloaded the whole NAS (see the troubleshooting log)
 - [x] **Lowered job concurrency** ✅ *Done:* Smart Search, Face Detection, Video Conversion and Thumbnail Generation now run one at a time, so big backlogs move in one steady lane
@@ -123,6 +125,7 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 - [ ] Decide whether to turn off password login once SSO has proven reliable
 - [x] **Moved machine learning off the NAS** ✅ *Done:* it runs on ShineoriServer now (see Resource limits)
 - [x] **GPU acceleration for machine learning** ✅ *Done then reverted:* originally ran face detection, smart search and OCR through the `-cuda` image on the laptop's GPU. Moved back to CPU so the GPU stays free for Ollama and Hermes. See the updated [Resource limits](#resource-limits) section.
+- [x] **Optimized ML models** ✅ *Done:* `MACHINE_LEARNING_MODEL_REVISION=v2`, so CPU inference is lighter on the shared server
 - [ ] CPU monitoring for ML processing time, so I see if face detection backlogs on the 3-core cap
 - [ ] Hardware acceleration for video transcoding on the NAS, if it supports it
 
@@ -136,4 +139,5 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 - **Prove the cause before the fix:** stopping just the suspected container and watching the load fall confirmed it, so the permanent fix was aimed at the right thing
 - **Resource limits are a shared-host courtesy:** on a box with limited RAM, one unbounded container can turn into everyone's outage
 - **One small GPU can't comfortably serve two AI workloads:** whoever loads first grabs the memory, and an Ollama memory-reservation setting didn't prevent the conflict. Separate them for reliability.
+- **`restart` is not `up -d`:** restarting reuses the old container as-is. New images and compose or env changes only take effect when `up -d` recreates it, and `docker inspect` is how I prove which version is really running.
 - **Run each piece where its resource is cheap:** machine learning needs RAM and CPU but no storage, while the photo server needs storage but little RAM. Splitting them across two machines fixed the problem for good.

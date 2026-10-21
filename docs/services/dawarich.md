@@ -8,7 +8,7 @@
 | **Category** | Apps |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
 | **Exposed?** | Cloudflare Tunnel (no open ports) |
-| **Version** | 1.15.3 (pinned) |
+| **Version** | 1.16.0 (pinned) |
 | **Login** | Authentik SSO (OIDC), plus local password login |
 
 Compose file: [`stacks/dawarich/`](https://github.com/shineori/homelab/tree/main/stacks/dawarich)
@@ -63,6 +63,7 @@ flowchart LR
 4. **SSO:** create an OAuth2/OIDC provider in Authentik with Dawarich's redirect URI. Dawarich needs a **verified email claim**, so the provider uses a custom scope mapping (see the troubleshooting log).
 5. Point the phone's location tracking at the public hostname
 6. **Always start logins from the public hostname**, not the IP (see the troubleshooting log)
+7. **Health checks go to `/api/v1/health`**, not `/`. Since 1.16.0, `/` redirects to the sign-in page.
 
 ## Troubleshooting log
 
@@ -73,6 +74,7 @@ flowchart LR
 | 2026-10-11 | Needed the new machine's IP in `APPLICATION_HOSTS` | Rails rejects requests for hosts that aren't on the allow-list | Appended it to `.env` with a leading newline, so it couldn't get glued onto the end of `SECRET_KEY_BASE` |
 | 2026-10-11 | *Sign in with Authentik* ended on a Cloudflare **502** | The tunnel route still pointed at the old machine. I'd also started the login on the LAN IP, but Authentik sends you back to the public hostname, so the login cookie wouldn't have matched anyway. | Repointed the tunnel route and started the login from the public hostname |
 | 2026-10-13 | The web app was down for hours while the database and background worker were fine | I'd rebooted the laptop. Docker stopped every container cleanly (exit code 0), and the web app and worker used the upstream `restart: on-failure` policy, which only restarts after a *crash*, so a clean stop left them down. | Changed both to `restart: unless-stopped`, like every other app in the lab. Found the cause in the system journal: `sudo reboot now` at the exact second the app shut down. |
+| 2026-10-21 | Upgrading 1.15.3 to 1.16.0 | The release notes warned about a one-time background migration (merging duplicate legacy points and recalculating achievements) and that `/` now redirects to sign-in | Diffed the upstream compose file between the two versions first: no changes. Backed up the stopped stack and all its volumes, bumped both image tags, then let the migration finish before judging anything. `/api/v1/health` answered `{"status":"ok"}`. |
 
 ## What I'd harden next
 
@@ -85,4 +87,5 @@ flowchart LR
 - **Named volumes vs bind mounts:** where a container keeps its data decides how you back it up and move it. `docker volume ls` first, always.
 - **PostGIS:** a database can understand geography as well as numbers and text
 - **Host allow-lists:** web frameworks like Rails refuse requests for hostnames they weren't told about, which blocks a class of attacks but needs updating when a server moves
+- **Read the release notes, then diff the compose file:** the notes say what changes inside the app, the compose diff says whether my setup has to change too
 - **OIDC flows are tied to addresses:** the redirect URI and the login cookie both depend on the hostname, so mixing an IP and a domain breaks the login
