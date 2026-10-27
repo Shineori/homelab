@@ -6,10 +6,12 @@
 |---|---|
 | **Host** | ShineoriServer |
 | **Category** | AI |
-| **Status** | 🟢 running |
+| **Status** | ⚫ retired (October 2026) |
 | **Exposed?** | LAN only. A Discord bot (outbound connection only, locked to my user) and a webhook port that only my Diun instances call, never published through a tunnel |
 
 Not a Docker stack (see setup notes below).
+
+> **Retired in October 2026.** I removed Hermes Agent and its dedicated `hermes` user from ShineoriServer. This page stays up as a write-up of how I built it and what I learned. My weekly update check now runs through Claude, and [Nimble](nimble.md) handles quick yes/no and risk calls.
 
 ## Why I run it
 
