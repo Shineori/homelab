@@ -61,6 +61,7 @@ nav:
           - "The Forest dedicated server": services/the-forest.md
       - AI:
           - "Ollama + Open WebUI + SearXNG": services/ollama-stack.md
+          - "Nimble + Decision Bridge": services/nimble.md
           - "Hermes Agent": services/hermes-agent.md
       - Security labs:
           - "Pentesting lab": services/pentest-lab.md

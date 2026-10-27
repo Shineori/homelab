@@ -99,6 +99,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Ollama + Open WebUI + SearXNG](docs/services/ollama-stack.md) | ShineoriServer | 🟢 | Local LLM stack with private web search |
+| [Nimble + Decision Bridge](docs/services/nimble.md) | ShineoriServer + Windows PC | 🟢 | Local decision model that gives Claude typed yes/no, choice and score answers |
 | [Hermes Agent](docs/services/hermes-agent.md) | ShineoriServer | 🟢 | Local AI agent that reads release notes and posts update verdicts in Discord, behind layered guardrails |
 
 ### Security labs
