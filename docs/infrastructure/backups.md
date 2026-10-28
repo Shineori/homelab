@@ -155,7 +155,7 @@ After [moving six services](migration.md) to my laptop server, their data sat ou
 flowchart LR
     cron([cron 04:15<br/>laptop]) --> s[laptop-backup.sh]
     s --> d[Dawarich<br/>pg_dump + pg_restore --list]
-    s --> p[Uptime Kuma, Homarr, Karakeep<br/>paused ~3 s for a consistent copy]
+    s --> p[Uptime Kuma, Karakeep, Paperless<br/>paused ~3 s for a consistent copy]
     d --> r[restic<br/>encrypts on the laptop]
     p --> r
     r -- HTTP over LAN --> rs[rest-server on ShiNAS<br/>--append-only --private-repos]
@@ -168,7 +168,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Homarr, plus each app's compose file and `.env` |
+| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
 | **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (it has [its own daily backup](minecraft-backups.md)) |
 | **Schedule** | Laptop nightly at 04:15, after the NAS's own 03:30 run so they don't compete for the disk. NAS cleanup Sundays at 05:00. |
 | **Scripts** | [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh) on the laptop, [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) on the NAS |
@@ -214,6 +214,7 @@ If the laptop is gone, run restic **on the NAS** against `/volume2/backups/resti
 | The restore test couldn't find the restored Immich dump | My test made the folder root-only, but the `*.sql.gz` wildcard was expanded by my *user* shell before `sudo` ran | Ran the whole check inside `sudo sh -c '...'`. The backup itself was fine. |
 | The NAS cleanup failed: *wrong password or no key found* | The key I typed on the NAS didn't match the laptop's (a paste slip) | Compared SHA-256 fingerprints of both files without showing either key, then copied the laptop's working file over SSH instead of retyping it. Also checked that my password manager's copy matched. |
 | A restore check said *Permission denied* even with `sudo` | In `sudo cmd < file`, the `<` is handled by my own shell, not by root | `sudo sh -c 'cmd < file'`, so root opens the file |
+| Laptop backup failed: `No such container: homarr` (2026-10-28) | I had removed Homarr from both servers, but the script still tried to pause it | Took Homarr out of the pause list and the backup paths. The `EXIT` trap worked as designed: the other paused apps were started again even though the run failed. |
 
 ## Roadmap to full 3-2-1
 
@@ -223,5 +224,5 @@ If the laptop is gone, run restic **on the NAS** against `/volume2/backups/resti
 - [ ] **Off-site:** encrypted copy to cloud storage, so the backups survive fire, theft or ransomware on the home network
 - [x] **Back up ShineoriServer too** ✅ *Done:* nightly, encrypted, append-only backups to the NAS, with a tested restore ([above](#shineoriserver-backups-append-only))
 - [ ] **Dead-man's switch:** an Uptime Kuma push monitor that alerts if a night's backup *doesn't run at all* (the Discord trap only catches runs that start and then fail)
-- [ ] **Add Paperless** (scanned documents are as irreplaceable as photos): its `data/` and `media/` folders, or a nightly `document_exporter` run
+- [x] **Add Paperless** ✅ *Done 2026-10-28:* it moved to ShineoriServer, so it joined the laptop's nightly append-only backup. Paperless uses SQLite, so it's paused for a few seconds like the other small apps, and its whole folder (`data/`, `media/`, compose file) is backed up.
 - [ ] Quarterly restore drill, including a full reload of the Dawarich database into a test container
