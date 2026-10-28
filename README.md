@@ -62,7 +62,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 |---|---|---|---|
 | [Cloudflare Tunnel](docs/services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
 | [Tailscale](docs/services/tailscale.md) | ShiNAS | 🟢 | Private remote access to the NAS and friend file sharing, nothing public |
-| [Omada Controller](docs/services/omada-controller.md) | ShiNAS | ⏸️ | Manages TP-Link Omada network gear |
+| [Omada Controller](docs/services/omada-controller.md) | ShineoriServer | ⏸️ | Manages TP-Link Omada network gear |
 | [Homarr](docs/services/homarr.md) | ShineoriServer | 🟢 | Dashboard / home screen for every service |
 | [Diun](docs/services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |
 | [Uptime Kuma](docs/services/uptime-kuma.md) | ShineoriServer | 🟢 | Uptime monitoring and alerts for every service |
@@ -84,7 +84,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Dawarich](docs/services/dawarich.md) | ShineoriServer | 🟢 | Self-hosted location history (Google Timeline replacement) |
 | [Flowcase](docs/services/flowcase.md) | ShiNAS | ⏸️ | Browser-based isolated workspaces (Kasm-style), routed through ProtonVPN |
 | [Ghiro](docs/services/ghiro.md) | ShineoriServer | ⏸️ | Image forensics web app |
-| [Paperless-ngx](docs/services/paperless.md) | ShiNAS | 🟢 | Scans, OCRs and organizes documents so they're searchable |
+| [Paperless-ngx](docs/services/paperless.md) | ShineoriServer | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](docs/services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
 
 ### Game servers

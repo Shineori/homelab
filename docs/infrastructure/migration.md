@@ -102,6 +102,13 @@ ShineoriServer 💻 31 GB                   ShiNAS 🗄️ 7.5 GB
 
 About 870 MiB of steady RAM use left the NAS, and more importantly the **up-to-2 GB spikes** from machine learning now land on a machine with room for them. One Cloudflare tunnel on the NAS still publishes apps on both machines.
 
+## Later moves
+
+| When | Service | Notes |
+|---|---|---|
+| October 2026 | **Omada Controller** | On-demand app that doesn't need the NAS disks. Upgraded to v6 on the laptop afterwards ([details](../services/omada-controller.md)). |
+| 2026-10-28 | **Paperless-ngx** | Moved off the NAS for RAM, and upgraded to 3.3.4. This breaks the "irreplaceable data stays on the NAS" rule above, so it's joining the laptop's nightly encrypted backup to the NAS ([Backups](backups.md#shineoriserver-backups-append-only)). |
+
 ## What I'd do next
 
 - [x] **Back up the laptop** ✅ *Done:* nightly, encrypted, append-only backups to the NAS ([Backups](backups.md#shineoriserver-backups-append-only))
