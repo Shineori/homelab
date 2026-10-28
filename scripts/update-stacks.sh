@@ -5,7 +5,7 @@
 set -u
 DOCKER_DIR=/home/shineori/docker
 B=/home/shineori/backups/pre-update-$(date +%F_%H%M)
-DEFAULT="uptime-kuma homarr dawarich karakeep ollama-stack minecraft"
+DEFAULT="uptime-kuma dawarich karakeep ollama-stack minecraft"
 STACKS="${*:-$DEFAULT}"
 mkdir -p "$B"; SUMMARY=()
 

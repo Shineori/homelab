@@ -27,14 +27,13 @@ flowchart LR
     kuma -- HTTP checks --> laptop[Apps on ShineoriServer]
     kuma -- ping --> host[ShiNAS itself]
     kuma --> db[(./data<br/>kuma.db SQLite)]
-    homarr[Homarr dashboard] -- status page --> kuma
 ```
 
 | Piece | Job |
 |---|---|
 | **Monitors** | One HTTP check per web app, using the machine's LAN address (never `localhost`), plus a ping check for the NAS |
 | **Tags** | Group related monitors, like the `arr` tag for the media-automation apps |
-| **Status page** | A read-only page that [Homarr](homarr.md) reads to show live status on my dashboard |
+| **Status page** | A read-only page of live status. It used to feed my [Homarr](homarr.md) dashboard (now retired). |
 | **`./data`** | Everything (settings, monitors, history) lives in one SQLite database in a bind-mounted folder |
 
 ## Security decisions
@@ -52,7 +51,7 @@ flowchart LR
 2. Create the admin account on first visit to `http://<LAN_IP>:3001`
 3. Add monitors using **LAN IPs**, not `localhost` or container names, so they keep working no matter which machine Uptime Kuma runs on
 4. Pause monitors for on-demand services (Flowcase, Ghiro) so only real outages show red
-5. Create a status page for the Homarr widget
+5. Optionally create a status page, for a dashboard widget or a quick read-only view
 6. **Moving it:** stop the container first, then copy the folder. Stopping merges SQLite's write-ahead log (`kuma.db-wal`) into `kuma.db`, so the copy isn't half-saved.
 
 ## Troubleshooting log

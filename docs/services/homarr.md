@@ -6,11 +6,13 @@
 |---|---|
 | **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
-| **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
+| **Status** | ⚫ retired (removed from both servers on 2026-10-28) <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
 | **Exposed?** | LAN only |
 | **Port** | 7575 |
 
 Compose file: [`stacks/homarr/`](https://github.com/shineori/homelab/tree/main/stacks/homarr)
+
+> ⚫ **Retired on 2026-10-28.** I removed Homarr completely from both machines; my dashboard is now [Homepage](https://gethomepage.dev). This page stays up as a record of how it was set up and what I learned.
 
 > 🚚 **Moved from ShiNAS to ShineoriServer** in October 2026 to free up RAM on the NAS. Full story: [Moving services off the NAS](../infrastructure/migration.md).
 
@@ -63,7 +65,7 @@ Homarr keeps two separate kinds of records, which tripped me up once (see the tr
 ## What I'd harden next
 
 - [ ] Log in through [Authentik](authentik.md) instead of a separate Homarr password
-- [x] **Backed up** ✅ *Done:* `./appdata` and `.env` are in the laptop's nightly backup ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
+- [x] **Backed up** ✅ *Done while it ran:* `./appdata` and `.env` were in the laptop's nightly backup. Removed from the backup when Homarr was retired.
 
 ## What I learned
 

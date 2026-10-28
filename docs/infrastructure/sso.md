@@ -6,5 +6,5 @@ How SSO ties the lab together. See [Authentik](../services/authentik.md) for the
 |---|---|---|---|
 | Immich | ✅ optional | OIDC | |
 | Dawarich | ✅ optional | OIDC | custom email-verified scope mapping |
-| Homarr | 🔵 planned | OIDC | |
+| Homarr | ⚫ retired | | removed on 2026-10-28 before SSO was set up |
 | Open WebUI | ❌ skipped | | rarely used, spun down |

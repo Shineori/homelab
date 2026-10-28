@@ -62,7 +62,7 @@ flowchart LR
 
 ## What I'd harden next
 
-- [ ] **Add it to the nightly encrypted backup.** Scanned documents are as irreplaceable as photos ([roadmap](../infrastructure/backups.md#roadmap-to-full-3-2-1)). In progress: joining ShineoriServer's append-only backup to the NAS.
+- [x] **Add it to the nightly encrypted backup** ✅ *Done 2026-10-28:* part of ShineoriServer's nightly append-only backup to the NAS, paused for a few seconds so the SQLite database is consistent ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
 - [ ] Move the admin password and secret key out of the compose file into a git-ignored `.env`
 - [ ] Pin the Redis image (`redis:7` is a floating tag)
 
