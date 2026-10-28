@@ -61,6 +61,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Cloudflare Tunnel](docs/services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
+| [Tailscale](docs/services/tailscale.md) | ShiNAS | 🟢 | Private remote access to the NAS and friend file sharing, nothing public |
 | [Omada Controller](docs/services/omada-controller.md) | ShiNAS | ⏸️ | Manages TP-Link Omada network gear |
 | [Homarr](docs/services/homarr.md) | ShineoriServer | 🟢 | Dashboard / home screen for every service |
 | [Diun](docs/services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |

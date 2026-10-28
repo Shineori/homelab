@@ -39,6 +39,7 @@ nav:
           - "auditd + Discord alerts": services/security-monitoring.md
       - Networking & monitoring:
           - "Cloudflare Tunnel": services/cloudflared.md
+          - "Tailscale": services/tailscale.md
           - "Omada Controller": services/omada-controller.md
           - "Homarr": services/homarr.md
           - "Diun": services/diun.md
