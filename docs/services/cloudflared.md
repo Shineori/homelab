@@ -24,7 +24,7 @@ Opening ports on my home router would put every service, and my home IP address,
 ```mermaid
 flowchart LR
     v([Visitor]) --> edge[Cloudflare edge<br/>HTTPS + DDoS]
-    edge --> acc{Cloudflare Access<br/>NAS panel only}
+    edge --> acc{Cloudflare Access<br/>NAS panel + addy.io}
     acc -- passkey via Authentik --> tun
     edge --> tun[[Outbound tunnel]]
     tun --> cfd[cloudflared<br/>on ShiNAS]
@@ -56,6 +56,7 @@ Keeping them separate means each tunnel has its own token and its own routes, an
 | Jellyfin, Audiobookshelf | ShiNAS | App login |
 | Karakeep | ShineoriServer | App login |
 | Open WebUI | ShineoriServer | App login (usually spun down) |
+| [addy.io](addy.md) web UI (tunnel 2) | ShineoriServer | 🔐 **Cloudflare Access → Authentik passkey**, then the addy login (added 2026-10-30). Its `/api` path has a separate Bypass rule, because the browser extension and app use API tokens. |
 | *Any other hostname* | n/a | **Catch-all rule returns 404**, so nothing unlisted is reachable |
 
 ### Right tool for each job
@@ -130,7 +131,7 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 - [x] **Narrowed the resume site's port binding** ✅ *Done.* Docker publishes ports on every interface by default (and its iptables rules skip host firewalls). The port is now bound to the NAS's LAN IP only, with the tunnel route pointing at that address. Devices on my home network can still reach it directly. Details and the trade-offs in the [resume site docs](resume-site.md).
 - [ ] Do the same for other apps whose only client is `cloudflared`. Routes that point at the LAN IP (not `localhost`) have to be switched first, or they'll break.
 - [ ] Protect Vaultwarden's `/admin` page with an Access policy scoped to that path (the main vault has to stay open for its apps).
-- [ ] Turn on Cloudflare Access for other admin-style apps where clients don't need direct API access.
+- [ ] Turn on Cloudflare Access for other admin-style apps where clients don't need direct API access. *Progress:* addy.io's web UI got it on 2026-10-30, with a path-based Bypass for its token-protected API, which is a pattern I can reuse for other apps that have both a browser UI and an API.
 - [ ] Re-audit routes and DNS records regularly. Today's findings were all **drift**: leftovers from setups that changed.
 
 ## What I learned
