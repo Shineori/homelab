@@ -1,0 +1,51 @@
+# Gmail Cleaner on ShineoriServer (~/docker/gmail-cleaner)
+#
+# Builds from Shineori/gmail-cleaner pinned to commit 8b9a3ce, which adds
+# protected senders, undo/history, previews and the Cloudflare Access gate.
+# The fork's own Dockerfile is hardened (non-root, pinned uv, no dev deps).
+#
+# Flow: browser -> Cloudflare Access (Authentik login) -> tunnel ->
+#       <LAN_IP>:8766 -> app re-verifies the Access JWT on every request.
+#
+# Before first start:
+#   1. credentials.json (Google "Desktop app" OAuth client) next to this file
+#   2. mkdir data && sudo chown 1000:1000 data
+#   3. cp .env.example .env, paste ACCESS_AUD, chmod 600 .env credentials.json
+#   4. docker compose up -d --build
+#
+# To update later: change the commit hash below, then up -d --build.
+
+services:
+  gmail-cleaner:
+    build:
+      context: https://github.com/Shineori/gmail-cleaner.git#8b9a3cece139a6d9c3c7fcd560a62d0e524c23ca
+    image: gmail-cleaner:8b9a3ce
+    container_name: gmail-cleaner
+
+    ports:
+      # Web UI for the tunnel only. The OAuth callback port isn't published:
+      # sign-in is finished by pasting Google's redirect address in the app.
+      - "${BIND_IP}:8766:8766"
+
+    volumes:
+      - type: bind
+        source: ./credentials.json
+        target: /app/credentials.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./data              # token.json, protected_senders.json, history.json
+        target: /app/data
+
+    environment:
+      - WEB_AUTH=true
+      - ACCESS_TEAM_DOMAIN=${ACCESS_TEAM_DOMAIN:?set ACCESS_TEAM_DOMAIN in .env}
+      - ACCESS_AUD=${ACCESS_AUD:?set ACCESS_AUD in .env}
+      - ACCESS_ALLOWED_EMAILS=${ACCESS_ALLOWED_EMAILS:-}
+
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped

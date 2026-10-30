@@ -33,6 +33,7 @@ MAP=(
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
   laptop:minecraft:minecraft  laptop:ollama-stack:ollama-stack
   laptop:omada-controller:omada  laptop:paperless:paperless  laptop:addy:addy
+  laptop:gmail-cleaner:gmail-cleaner
 )
 
 # Your own domain(s) as one regex: every host under them becomes <redacted-domain>.
