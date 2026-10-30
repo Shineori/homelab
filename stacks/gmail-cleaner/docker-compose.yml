@@ -1,6 +1,6 @@
 # Gmail Cleaner on ShineoriServer (~/docker/gmail-cleaner)
 #
-# Builds from Shineori/gmail-cleaner pinned to commit 8b9a3ce, which adds
+# Builds from Shineori/gmail-cleaner pinned to commit b3e662f, which adds
 # protected senders, undo/history, previews and the Cloudflare Access gate.
 # The fork's own Dockerfile is hardened (non-root, pinned uv, no dev deps).
 #
@@ -18,8 +18,8 @@
 services:
   gmail-cleaner:
     build:
-      context: https://github.com/Shineori/gmail-cleaner.git#8b9a3cece139a6d9c3c7fcd560a62d0e524c23ca
-    image: gmail-cleaner:8b9a3ce
+      context: https://github.com/Shineori/gmail-cleaner.git#b3e662f1bba870083bf452f7c044a91a845cf222
+    image: gmail-cleaner:b3e662f
     container_name: gmail-cleaner
 
     ports:
