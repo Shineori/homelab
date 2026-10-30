@@ -55,6 +55,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Authentik](services/authentik.md) | ShiNAS | 🟢 | Single sign-on and identity provider for the lab |
 | [Vaultwarden](services/vaultwarden.md) | ShiNAS | 🟢 | Self-hosted Bitwarden server for passwords, TOTP and passkeys |
 | [auditd + Discord alerts](services/security-monitoring.md) | ShiNAS | 🟢 | Host-level audit logging with real-time Discord webhook alerts |
+| [addy.io](services/addy.md) | ShineoriServer | 🟢 | Anonymous email aliases on my own domain, forwarded to my real inbox |
 
 ### Networking & monitoring
 

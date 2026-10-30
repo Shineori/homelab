@@ -37,6 +37,7 @@ nav:
           - "Authentik": services/authentik.md
           - "Vaultwarden": services/vaultwarden.md
           - "auditd + Discord alerts": services/security-monitoring.md
+          - "addy.io": services/addy.md
       - Networking & monitoring:
           - "Cloudflare Tunnel": services/cloudflared.md
           - "Tailscale": services/tailscale.md
