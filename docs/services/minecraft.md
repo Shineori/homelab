@@ -119,7 +119,7 @@ flowchart LR
 
 ## What I'd harden next
 
-- [x] Automated daily backups of the world ✅ *Done:* skips quiet days, keeps 5 locally, archives older ones to the NAS ([details](../infrastructure/minecraft-backups.md))
+- [x] Automated daily backups of the world ✅ *Done:* skips quiet days, keeps the newest copy on the server and the newest 2 on the NAS, copied every run ([details](../infrastructure/minecraft-backups.md))
 - [x] Pin the Minecraft version ✅ *Done:* `VERSION: "26.3"`
 - [ ] Pin the server and playit **images** instead of `:latest`
 - [ ] Pin Geyser/Floodgate to known-good builds, so a bad beta can't break Bedrock on restart

@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Security & identity |
 | **Status** | 🟢 running |
-| **Exposed?** | Port 25 open to the internet (inbound mail). Web UI only through the Cloudflare Tunnel. |
+| **Exposed?** | Port 25 open to the internet (inbound mail). Web UI only through the Cloudflare Tunnel, behind **Cloudflare Access + Authentik** since 2026-10-30 (the API path skips the gate for the browser extension and app). |
 | **Version** | 1.7.3 (pinned) |
 
 Compose file: [`stacks/addy/`](https://github.com/shineori/homelab/tree/main/stacks/addy)
@@ -31,7 +31,9 @@ flowchart LR
     app --> db[(MariaDB<br/>aliases, rules, account)]
     app --> redis[(Redis<br/>queue + cache)]
     app -- "forward, signed + TLS" --> inbox([My real inbox])
-    me([Me]) -- "HTTPS" --> cf[Cloudflare Tunnel] --> app
+    me([Me, in a browser]) -- "HTTPS" --> acc{Cloudflare Access<br/>Authentik passkey}
+    acc -- "allowed" --> cf[Cloudflare Tunnel] --> app
+    ext([Browser extension / app]) -- "HTTPS /api/*<br/>bypasses Access" --> cf
     ddns[cloudflare-ddns] -. "keeps the mail A record<br/>on my home IP" .-> mx
 ```
 
@@ -58,6 +60,9 @@ flowchart LR
 |---|---|
 | **Registration off, one admin account** | It's a personal service. Nobody else can sign up and send mail through my server. |
 | **Web UI bound to the LAN IP, published only through the tunnel** | Port 8025 is never opened on the router. Only port 25 is, because mail servers have to reach it directly. |
+| **Cloudflare Access in front of the web UI, with Authentik as the only login method** | addy has no built-in single sign-on (only its own password, 2FA and security keys), so I put the same gate I use for my NAS admin panel in front of it: strangers never even see addy's login page. Instant auth skips the provider picker, and the policy allows only my own account. I left Cloudflare's one-time email PIN off, so the only way in is my Authentik passkey. |
+| **A separate Access app for `/api` with a Bypass policy** | The browser extension and phone app talk to the API with addy API tokens and can't complete a browser login. Every API call still needs a valid token, so skipping the gate there doesn't open anything. The more specific path wins, so every other page stays gated. |
+| **Mail never touches the gate** | Incoming mail arrives on port 25, not through the website, so Access can't block delivery |
 | **Rspamd dashboard not published at all** | It has nothing I need remotely, so it isn't exposed |
 | **DMARC `p=reject` with strict alignment** | My inbox has a filter that keeps alias mail out of spam. Without `reject`, someone could forge my domain and ride that filter straight into my inbox. Now forged mail is refused before it gets there. |
 | **SPF `-all` (hard fail)** | Only the MX host may send as my domain |
@@ -80,6 +85,11 @@ flowchart LR
    `docker compose exec addy anonaddy anonaddy:create-user "<username>" "<real inbox>"`. Turn on 2FA right away.
 8. Test from another account, then open the message in Gmail → **Show original** and check that SPF, DKIM and DMARC all say PASS. Only then move DMARC to `p=reject`.
 9. Add it to the nightly backup, Uptime Kuma (TCP 25 + the login page) and Diun.
+10. **Gate the web UI** in Cloudflare Zero Trust → Access → Applications → Self-hosted → Public DNS:
+    - App 1: the web UI hostname, no path. Login methods: only Authentik, instant auth on, 24-hour session. Policy: **Allow**, include my email.
+    - App 2: the same hostname with path `api`. Policy: **Bypass**, include Everyone.
+    - Check from outside: the login page should `302` to the Access login, and an API call without a token should get addy's own `401 {"message":"Unauthenticated."}` (proof the bypass works and addy still checks tokens).
+    - Point Uptime Kuma's web monitor at the LAN address of the login page, because the public one now answers with the Access redirect.
 
 **Backups:** every night a `mariadb-dump --single-transaction` of the database goes into the [ShineoriServer backup](../infrastructure/backups.md#shineoriserver-backups-append-only), along with the whole stack folder (config, `APP_KEY`, DKIM key). The raw `db/` and `redis/` folders are skipped, because copying a live database's files can give a broken copy. The dump replaces them. Forwarded emails themselves are never stored, so they aren't in the backup: they live in my inbox.
 
@@ -92,9 +102,13 @@ flowchart LR
 | 2026-10-30 | My own test from the server to my public IP on port 25 said `Connection refused` | Nothing was listening yet, and testing your public IP from inside the LAN only proves the router loops traffic back (hairpin NAT) | Started a throwaway listener and tested from an outside port checker: open. "Refused" means something answered; a block usually looks like a timeout. |
 | 2026-10-30 | Account email and first forward landed in Gmail spam | My home IP is on the Spamhaus PBL (a list of residential ranges that shouldn't send mail directly), and its reverse DNS is my ISP's generic name, which I can't change on a home plan. SPF/DKIM/DMARC all passed. | Gmail filter on my domain: label it and never send it to spam. Then moved DMARC to `p=reject` so the filter can't be abused by forged mail. |
 | 2026-10-30 | The UI said "Update available" for 1.7.4, but there was nothing to pull | The app releases first; the Docker image is packaged separately and lags a few days | Waiting for Diun to announce the image. The running 1.7.3 build already has the PHP security fixes. |
+| 2026-10-30 | Wanted a "Sign in with Authentik" button, but addy has no OIDC or SAML option | Checked the installed app's config: only its own login, TOTP 2FA and WebAuthn keys | Gated the whole site with Cloudflare Access (Authentik as the identity provider) instead. Trade-off: two logins, Authentik first, then addy. |
+| 2026-10-30 | Putting Access in front would have turned the Uptime Kuma web monitor red | The public login page now answers with a `302` to the Access login, not addy | Moved the monitor to the login page's LAN address, so it checks addy itself |
 
 ## What I'd harden next
 
+- [x] **Put the web UI behind Cloudflare Access + Authentik** ✅ *Done 2026-10-30:* tested from outside (gate redirects, the API bypass reaches addy, which still demands a token)
+- [ ] **Watch the one-click unsubscribe:** Gmail's automatic Unsubscribe button might be blocked by the gate. If it is, add a Bypass app for just that path.
 - [ ] **Update to 1.7.4** once the Docker image ships (2FA and API hardening, safer one-click block links)
 - [ ] **Inbound TLS for Postfix** with a Let's Encrypt certificate (DNS challenge through Cloudflare), so senders can encrypt mail on the way *in*. Outbound to my inbox is already encrypted.
 - [ ] **A small VPS as an outbound relay** with a clean IP and proper reverse DNS, if my inbox provider ever starts *rejecting* mail instead of only marking it as spam
@@ -109,3 +123,4 @@ flowchart LR
 - **Cloud free tiers block port 25** to stop spam, so a home connection that allows it is actually the easier option for a personal mail server
 - **Back up the dump, not the live files,** and remember the app key: without `APP_KEY`, parts of a restored database can't be decrypted
 - **Plan the failure case:** keeping my most important accounts off aliases means this server can never lock me out of my own life
+- **Not every app speaks SSO, but a gate in front still works:** Cloudflare Access can put my Authentik login in front of any website, and path-based rules let me keep the API open for clients that use tokens instead of browsers

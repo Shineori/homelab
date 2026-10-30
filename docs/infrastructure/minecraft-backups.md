@@ -1,10 +1,10 @@
 # Minecraft world backups
 
-> Daily world snapshots that **skip quiet days**, keep 5 recent copies on the game server, and archive every older copy to the NAS **before** it's deleted
+> Daily world snapshots that **skip quiet days**: the newest copy stays on the game server, and every copy goes to the NAS (verified) right away, where the newest 2 are kept
 
 | | |
 |---|---|
-| **Host** | ShineoriServer (runs the backup), ShiNAS (long-term archive) |
+| **Host** | ShineoriServer (runs the backup, keeps 1), ShiNAS (keeps 2: newest + one rollback) |
 | **Category** | Backups |
 | **Status** | 🟢 running |
 | **Schedule** | Daily at 04:30 (root cron on ShineoriServer) |
@@ -16,8 +16,10 @@
 The [Minecraft server](../services/minecraft.md) world wasn't in my nightly [restic backups](backups.md), and I'd already had to start the world over once after server problems. A world is weeks of my friends' building, so I wanted:
 
 - A copy for **every day something actually happened**, without filling the disk with identical copies on days nobody played
-- A few recent copies close by on the game server, for fast restores
-- **Every** older copy kept forever on the NAS, so nothing is lost when the local copies rotate out
+- The newest copy close by on the game server, for fast restores
+- A copy of the newest backup **off the game server right away**, plus one rollback, on the NAS
+
+**2026-10-30 slim-down:** the first version kept 5 copies on the game server and archived every older one to the NAS forever. That was more than a small friends' world needs, it grew by about 450 MB per rotation with no cleanup, and the newest 5 copies only ever lived on the laptop. Now it's 1 on the laptop and 2 on the NAS, and the newest backup is always on both machines.
 
 ## Architecture
 
@@ -28,13 +30,14 @@ flowchart TD
     fp -- no --> skip([Skip, nothing to do])
     fp -- yes --> tar[tar.gz the world folder<br/>written as .part, then renamed]
     tar --> on[RCON: save-on]
-    skip --> rot
-    on --> rot{More than 5<br/>local backups?}
-    rot -- no --> done([Done])
-    rot -- yes --> up[Stream oldest to ShiNAS<br/>over a plain SSH command]
+    skip --> sync
+    on --> sync{Newest 2 local backups<br/>already on ShiNAS?}
+    sync -- yes --> clean
+    sync -- missing --> up[Stream to ShiNAS<br/>over a plain SSH command]
     up --> ver{SHA-256 matches<br/>on both ends?}
-    ver -- yes --> del[Rename on NAS,<br/>delete local copy]
-    ver -- no --> keep([Keep local copy,<br/>retry next run])
+    ver -- yes --> ren[Rename .part on NAS] --> clean[Cleanup: ShiNAS keeps 2,<br/>ShineoriServer keeps 1]
+    ver -- no --> keep([Delete nothing anywhere,<br/>retry next run])
+    clean --> done([Done])
 ```
 
 | Piece | Job |
@@ -42,15 +45,17 @@ flowchart TD
 | **`mc-backup.sh`** | One bash script, run by root's crontab on ShineoriServer |
 | **RCON** (`rcon-cli` inside the container) | Pauses autosave and flushes everything in memory to disk, so the copy is consistent |
 | **Fingerprint** | A SHA-256 of every world file's path, size and modified time. If it matches the last backup's, nothing changed |
-| **Local store** | `~/backups/minecraft` on ShineoriServer, newest 5 snapshots plus `backup.log` |
-| **Archive** | `~/backups/minecraft` on ShiNAS, grows forever |
+| **Local store** | `~/backups/minecraft` on ShineoriServer, the newest snapshot plus `backup.log` |
+| **NAS copy** | `~/backups/minecraft` on ShiNAS, the newest 2 snapshots (same as the laptop + one rollback) |
+| **Catch-up** | Each run makes sure the newest 2 local backups exist on the NAS, so a night the NAS was unreachable fixes itself on the next run |
 | **Dedicated SSH key** | A root-only, passphrase-less key used only for this job |
 
 ## Security decisions
 
 | Decision | Why |
 |---|---|
-| **Delete only after a verified copy** | The local file is removed only after the NAS copy's SHA-256 matches. A failed or partial transfer can never cost me a backup |
+| **Delete only after a verified copy** | Cleanup on either machine only runs after the newest backups' NAS copies match by SHA-256. If the NAS is unreachable or a transfer fails, nothing is deleted anywhere |
+| **Not encrypted, and not in restic or the off-site copy** | It's a game world, not personal data. I decided two machines is enough for it ([main backups](backups.md) cover what I can't lose) |
 | **Upload as `.part`, rename after verifying** | A half-finished upload can never look like a real backup on the NAS |
 | **Dedicated SSH key for the job** | It's separate from my personal key, so I can revoke it without touching my own access |
 | **`BatchMode=yes` on every SSH call** | The script fails instead of hanging on a password or host-key prompt at 4:30 AM |
@@ -71,9 +76,9 @@ flowchart TD
 3. On the NAS, make sure `~/backups/minecraft` is owned by my user, not root: `sudo chown -R shineori: ~/backups`
 4. Test run, then run it again right away. The second run should log `No changes since last backup, skipping.`
 5. Schedule it: `sudo crontab -e`, then add `30 4 * * * /usr/local/bin/mc-backup.sh`
-6. Test the NAS handoff without waiting a week: `touch` 5 empty fake backups named `world_2000-01-0X_0000.tar.gz`, run the script, and check that the oldest fake shows up on the NAS. Then delete the fakes on both machines
+6. Check the handoff: after a run, `ls -lh ~/backups/minecraft` should show 1 world on the game server and up to 2 on the NAS, and the log should say `Copied to ShiNAS and verified` after play days
 
-**Restoring:** stop the container, move the broken world folder aside, then `tar -xzf world_<date>.tar.gz -C ~/docker/minecraft/mc-data` and start the container again. Older snapshots come from the NAS first.
+**Restoring:** stop the container, move the broken world folder aside, then `tar -xzf world_<date>.tar.gz -C ~/docker/minecraft/mc-data` and start the container again. The rollback copy comes from the NAS first.
 
 ## Troubleshooting log
 
@@ -85,6 +90,7 @@ flowchart TD
 | 2026-10 | rsync to the NAS: `connection unexpectedly closed (0 bytes received)` | The NAS vendor replaces rsync with a wrapper that tries to become root and only accepts its own shared-folder paths (`invalid path`). Running rsync by hand with `-v` showed the real error | Stopped using rsync for the transfer |
 | 2026-10 | scp: `No such file or directory` for a folder that clearly existed | Modern scp uses SFTP, and the NAS's SFTP server is also replaced and maps paths differently from the real shell | Stream the file through a plain SSH command (`ssh ... "cat > file.part" < file`), which sees the real filesystem |
 | 2026-10 | `Permission denied` writing the `.part` file | The archive folder on the NAS was owned by root, but the job logs in as my user | `sudo chown -R shineori: ~/backups`, confirmed with a `touch` test |
+| 2026-10-30 | The NAS archive only grew, and the newest 5 copies never left the laptop | The first design only moved a backup to the NAS when it rotated out locally | Rewrote the rotation: copy the newest backups to the NAS every run, then keep 1 locally and 2 on the NAS. Cleanup is skipped entirely if any copy fails |
 
 ## What I'd harden next
 
@@ -92,7 +98,7 @@ flowchart TD
 - [ ] Uptime Kuma push monitor as a dead-man's switch, in case the job stops running entirely
 - [ ] Restrict the NAS key in `authorized_keys` so it can only run the few commands this job needs
 - [ ] Do a real restore drill into a test container, not just the copy test
-- [ ] A size or age limit on the NAS archive, or move it into restic for deduplication (each snapshot is a full 450 MB copy right now)
+- [x] A size limit on the NAS archive ✅ *Done 2026-10-30:* the NAS keeps only the newest 2
 - [ ] Include the server config and mods folder, not just the world, so a full rebuild needs only the backup
 
 ## What I learned
@@ -103,3 +109,4 @@ flowchart TD
 - **Test the failure path on purpose:** fake old backups proved the NAS handoff in minutes instead of a week, and the failed attempts proved the script keeps local copies when something breaks
 - **Run the same command by hand with more output:** `rsync -v` showed the real error that the script's log was hiding
 - **Ownership matters on both ends:** SSH working doesn't mean the remote user can write to the folder
+- **Match the backup to what's at stake:** a game world doesn't need the same 3-2-1 treatment as my password vault. Fewer copies, kept current, beat a pile of old ones

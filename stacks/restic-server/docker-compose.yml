@@ -12,3 +12,19 @@ services:
       - "<LAN_IP>:8500:8000"     # NAS LAN IP only
     volumes:
       - /volume2/backups/restic-laptop:/data    # second disk; .htpasswd lives here too
+
+  # Lets the Windows PC pull a 3rd copy of BOTH repos (restic copy).
+  # --append-only: the PC can read and take locks, but can never delete or overwrite anything.
+  # Separate login (reader.htpasswd, user windows-pc), separate port, NAS LAN IP only.
+  rest-reader:
+    image: restic/rest-server:0.13.0
+    container_name: restic-rest-reader
+    restart: unless-stopped
+    environment:
+      OPTIONS: "--append-only"
+    ports:
+      - "<LAN_IP>:8501:8000"
+    volumes:
+      - /volume2/backups/restic:/data/shinas
+      - /volume2/backups/restic-laptop/shineoriserver:/data/shineoriserver
+      - ./reader.htpasswd:/data/.htpasswd:ro

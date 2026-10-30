@@ -76,7 +76,7 @@ Encryption and decryption happen **on my devices**. Vaultwarden only ever stores
 - [x] **Pinned the image version** ✅ *Done:* `1.37.3` instead of `:latest`, verified identical to the running image. [Diun](diun.md) announces new releases in Discord.
 - [ ] **The NAS's network share can read root-only files.** While syncing configs, my collector (connecting over the share) could read this `chmod 600 root` `.env`, so whatever account the share uses bypasses those permissions. Fix: scope the share to a non-admin account, or exclude secret files from it.
 - [x] **Nightly encrypted backups** ✅ *Done:* consistent SQLite snapshot + `rsa_key` + attachments, backed up to an encrypted restic repository on a second disk. **The restore is tested:** 548 of 548 items and 4 of 4 users matched, and the integrity check passed. See [Backups](../infrastructure/backups.md).
-- [ ] Replicate those backups off the NAS (second server, then off-site)
+- [x] Replicate those backups off the NAS ✅ *Done 2026-10-30:* my PC pulls a copy every morning into a repository that syncs to iCloud ([Backups](../infrastructure/backups.md#copy-3-off-site-windows-pc-icloud))
 - [ ] **Keep an offline emergency kit:** master password plus the 2FA recovery code for my vault account, stored on paper somewhere safe
 - [ ] Check the brute-force protections on the login endpoint, and alert on failed logins
 - [x] **Configured SMTP** ✅ *Done:* invitations and new-device login alerts now arrive by email, sent through the lab's alerts mailbox with a dedicated app password

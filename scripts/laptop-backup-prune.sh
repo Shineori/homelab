@@ -20,7 +20,7 @@ exec 9>/run/laptop-backup-prune.lock
 if ! flock -n 9; then log "already running, exiting"; exit 0; fi
 log "== prune start"
 # Retention: 7 daily, 4 weekly, 6 monthly (same as the NAS's own backups)
-restic forget --prune --group-by host,tags --keep-daily 7 --keep-weekly 4 --keep-monthly 6
+restic forget --prune --group-by host,tags --keep-daily 7 --keep-weekly 4 --keep-monthly 12
 # Verify the repository and re-read a sample of the actual data
 restic check --read-data-subset=5%
 log "== prune OK"

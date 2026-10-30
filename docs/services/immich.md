@@ -121,7 +121,7 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 - [x] **Capped the machine-learning container** ✅ *Done:* `mem_limit: 2g` and `cpus: 1.5`, after it overloaded the whole NAS (see the troubleshooting log)
 - [x] **Lowered job concurrency** ✅ *Done:* Smart Search, Face Detection, Video Conversion and Thumbnail Generation now run one at a time, so big backlogs move in one steady lane
 - [ ] Get Uptime Kuma alerting on NAS load or swap, so I see the next overload coming instead of finding out from timeouts
-- [ ] Finish 3-2-1: replicate to my second server, then an encrypted off-site copy
+- [x] Finish 3-2-1 ✅ *Done 2026-10-30:* the encrypted backups are also copied to my PC and synced off-site to iCloud ([Backups](../infrastructure/backups.md#copy-3-off-site-windows-pc-icloud))
 - [ ] Decide whether to turn off password login once SSO has proven reliable
 - [x] **Moved machine learning off the NAS** ✅ *Done:* it runs on ShineoriServer now (see Resource limits)
 - [x] **GPU acceleration for machine learning** ✅ *Done then reverted:* originally ran face detection, smart search and OCR through the `-cuda` image on the laptop's GPU. Moved back to CPU so the GPU stays free for Ollama and Hermes. See the updated [Resource limits](#resource-limits) section.
