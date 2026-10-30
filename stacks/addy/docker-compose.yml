@@ -1,0 +1,72 @@
+# addy.io (self-hosted anonymous email forwarding) on ShineoriServer
+# Location: ~/docker/addy
+# Inbound mail: port 25 (router forwards TCP 25 -> <LAN_IP>)
+# Web UI:      <LAN_IP>:8025, published via the <redacted-domain> Cloudflare Tunnel
+
+name: addy
+
+services:
+  db:
+    image: mariadb:11.4
+    container_name: addy-db
+    restart: unless-stopped
+    command:
+      - "mariadbd"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: <redacted>
+      MARIADB_DATABASE: anonaddy
+      MARIADB_USER: anonaddy
+      MARIADB_PASSWORD: <redacted>
+    volumes:
+      - ./db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: addy-redis
+    restart: unless-stopped
+    volumes:
+      - ./redis:/data
+
+  addy:
+    image: anonaddy/anonaddy:${ADDY_VERSION}
+    container_name: addy
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "25:25"                   # SMTP, must be reachable from the internet
+      - "<LAN_IP>:8025:8000"   # Web UI, LAN only (tunnel points here)
+      # Rspamd dashboard (11334) intentionally NOT published
+    env_file:
+      - addy.env
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: <redacted>
+      REDIS_HOST: redis
+    volumes:
+      - ./data:/data
+
+  # Keeps the mail hostname pointed at my home IP (DNS only, never proxied)
+  ddns:
+    image: favonia/cloudflare-ddns:1
+    container_name: addy-ddns
+    restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    cap_drop: [all]
+    security_opt: [no-new-privileges:true]
+    environment:
+      CLOUDFLARE_API_TOKEN: <redacted>
+      DOMAINS: <redacted-domain>
+      PROXIED: "false"
+      IP6_PROVIDER: none

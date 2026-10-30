@@ -31,7 +31,12 @@ docker exec dawarich_db pg_dump -U postgres -Fc dawarich_development > "$STAGE/d
 docker exec -i dawarich_db pg_restore --list < "$STAGE/dawarich.dump" > /dev/null
 log "dawarich dump: $(du -h "$STAGE/dawarich.dump" | cut -f1), readable"
 
-# 2) Pause the SQLite apps, back everything up, start them again (EXIT trap guarantees the restart)
+# 2) addy.io: consistent MariaDB dump while it keeps running, then sanity-check it
+docker exec addy-db sh -c 'exec mariadb-dump --single-transaction --routines -u anonaddy -p"$MARIADB_PASSWORD" anonaddy' > "$STAGE/addy.sql"
+tail -n 1 "$STAGE/addy.sql" | grep -q 'Dump completed'
+log "addy dump: $(du -h "$STAGE/addy.sql" | cut -f1), complete"
+
+# 3) Pause the SQLite apps, back everything up, start them again (EXIT trap guarantees the restart)
 docker stop "${PAUSE[@]}" > /dev/null
 log "paused: ${PAUSE[*]}"
 restic backup --host shineoriserver --tag apps \
@@ -40,7 +45,8 @@ restic backup --host shineoriserver --tag apps \
   "$VOL/dawarich_dawarich_public/_data" \
   "$DOCKER/uptime-kuma" \
   "$DOCKER/karakeep" "$VOL/karakeep_data/_data" \
-  "$DOCKER/paperless"
+  "$DOCKER/paperless" \
+  "$DOCKER/addy" --exclude "$DOCKER/addy/db" --exclude "$DOCKER/addy/redis"
 restart_apps
 log "restarted: ${PAUSE[*]}"
 

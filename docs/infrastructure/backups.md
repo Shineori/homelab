@@ -155,8 +155,10 @@ After [moving six services](migration.md) to my laptop server, their data sat ou
 flowchart LR
     cron([cron 04:15<br/>laptop]) --> s[laptop-backup.sh]
     s --> d[Dawarich<br/>pg_dump + pg_restore --list]
+    s --> a[addy.io<br/>mariadb-dump --single-transaction]
     s --> p[Uptime Kuma, Karakeep, Paperless<br/>paused ~3 s for a consistent copy]
     d --> r[restic<br/>encrypts on the laptop]
+    a --> r
     p --> r
     r -- HTTP over LAN --> rs[rest-server on ShiNAS<br/>--append-only --private-repos]
     rs --> repo[(second disk<br/>separate repository)]
@@ -168,7 +170,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
+| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), addy.io (database dump + its folder: config, app key and DKIM key; added 2026-10-30), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
 | **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (it has [its own daily backup](minecraft-backups.md)) |
 | **Schedule** | Laptop nightly at 04:15, after the NAS's own 03:30 run so they don't compete for the disk. NAS cleanup Sundays at 05:00. |
 | **Scripts** | [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh) on the laptop, [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) on the NAS |

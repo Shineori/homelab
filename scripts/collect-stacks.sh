@@ -32,7 +32,7 @@ MAP=(
   laptop:immich-ml:immich-ml  laptop:uptime-kuma:uptime-kuma
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
   laptop:minecraft:minecraft  laptop:ollama-stack:ollama-stack
-  laptop:omada-controller:omada  laptop:paperless:paperless
+  laptop:omada-controller:omada  laptop:paperless:paperless  laptop:addy:addy
 )
 
 # Your own domain(s) as one regex: every host under them becomes <redacted-domain>.
@@ -81,7 +81,8 @@ for entry in "${MAP[@]}"; do
   for e in "$src"/.env "$src"/*.env; do
     [ -f "$e" ] || continue
     name="$(basename "$e")"
-    sed -E 's/^([[:space:]]*[A-Za-z_][A-Za-z0-9_]*)=.*/\1=/' "$e" > "$REPO/stacks/$dest/${name}.example"
+    # comments can mention domains or IPs too, so they go through redact() as well
+    sed -E 's/^([[:space:]]*#?[[:space:]]*[A-Za-z_][A-Za-z0-9_]*)=.*/\1=/' "$e" | redact > "$REPO/stacks/$dest/${name}.example"
   done
   [ $found = 1 ] && echo "ok    $dest  <-  $src" || echo "WARN  $dest  (folder exists but no compose file)"
 done
