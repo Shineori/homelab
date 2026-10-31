@@ -35,6 +35,8 @@ flowchart LR
 | **Ollama** | Runs the models on the GPU. It's installed **natively** (a systemd service on port 11432), not in Docker, so it has direct access to the GPU drivers. |
 | **Open WebUI** | The chat interface. Reaches Ollama through `host.docker.internal`, which always means "this machine" even if its IP changes. |
 | **SearXNG** | A private meta-search engine. It runs **inside gluetun's network stack**, so with no VPN it has no internet at all. |
+| **searxng-nginx** | Front door on :8888. Proxies to SearXNG inside gluetun and injects my Google-style CSS (`searxng-nginx/custom/google.css`), so restyling never touches SearXNG itself. gluetun no longer publishes a port of its own. |
+| **gluetun VPN protocol** | Chosen in `.env` (`VPN_TYPE=wireguard` or `openvpn`, falls back to OpenVPN), with exits pinned to nearby cities for low latency |
 | **Shared with [Karakeep](karakeep.md)** | Karakeep uses the same Ollama for tagging bookmarks |
 
 ## Security decisions

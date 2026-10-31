@@ -1,0 +1,211 @@
+# Every href is a LAN address on purpose (no domains in the public repo).
+# server: + container: = live status dot + CPU/RAM from the read-only socket proxies.
+
+- Machines:
+    - ShineoriServer:
+        icon: mdi-laptop
+        description: <LAN_IP> · 31 GB laptop
+        widget:
+          type: glances
+          url: http://<LAN_IP>:61208
+          version: 4
+          metric: info
+          chart: true
+    - ShineoriServer CPU:
+        icon: mdi-cpu-64-bit
+        widget:
+          type: glances
+          url: http://<LAN_IP>:61208
+          version: 4
+          metric: cpu
+    - ShiNAS:
+        icon: mdi-nas
+        description: <LAN_IP> · the vault
+        widget:
+          type: glances
+          url: http://<LAN_IP>:61208
+          version: 4
+          metric: info
+          chart: true
+    - ShiNAS Disk:
+        icon: mdi-harddisk
+        widget:
+          type: glances
+          url: http://<LAN_IP>:61208
+          version: 4
+          metric: fs:/volume1     # change if `df -h` shows a different mount
+
+- ShineoriServer:
+    - Uptime Kuma:
+        icon: uptime-kuma.svg
+        href: http://<LAN_IP>:3001
+        server: shineoriserver
+        container: uptime-kuma
+        widget:
+          type: uptimekuma
+          url: http://<LAN_IP>:3001
+          slug: "{{HOMEPAGE_VAR_KUMA_SLUG}}"
+    - Minecraft:
+        icon: minecraft.svg
+        description: Shineori SMP
+        server: shineoriserver
+        container: shineori-mc
+        widget:
+          type: minecraft
+          url: udp://<LAN_IP>:25565
+    - playit:
+        icon: mdi-tunnel
+        description: friends' way in
+        server: shineoriserver
+        container: shineori-playit
+    - SearXNG:
+        icon: searxng.svg
+        href: http://<LAN_IP>:8888
+        server: shineoriserver
+        container: searxng
+    - Ollama:
+        icon: ollama.svg
+        description: native on host, :11432
+        siteMonitor: http://<LAN_IP>:11432
+    - Immich ML:
+        icon: immich.svg
+        description: CPU worker for ShiNAS Immich
+        server: shineoriserver
+        container: immich_machine_learning
+    - Dawarich:
+        icon: dawarich.svg
+        href: http://<LAN_IP>:3009
+        server: shineoriserver
+        container: dawarich_app
+    - Homarr:
+        icon: homarr.svg
+        href: http://<LAN_IP>:7575
+        description: the old dashboard
+        server: shineoriserver
+        container: homarr
+    - Diun:
+        icon: mdi-update
+        description: posts to #shinas-alerts
+        server: shineoriserver
+        container: diun
+
+- ShiNAS:
+    - Immich:
+        icon: immich.svg
+        href: http://<LAN_IP>:2283
+        server: shinas
+        container: immich_server
+        widget:
+          type: immich
+          url: http://<LAN_IP>:2283
+          key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
+          version: 2
+    - Jellyfin:
+        icon: jellyfin.svg
+        href: http://<LAN_IP>:8096
+        server: shinas
+        container: jellyfin
+        widget:
+          type: jellyfin
+          url: http://<LAN_IP>:8096
+          key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
+          version: 2
+          enableBlocks: true
+          enableNowPlaying: true
+    - Jellyseerr:
+        icon: jellyseerr.svg
+        href: http://<LAN_IP>:5055
+        server: shinas
+        container: jellyseerr
+        widget:
+          type: jellyseerr
+          url: http://<LAN_IP>:5055
+          key: "{{HOMEPAGE_VAR_JELLYSEERR_KEY}}"
+    - Audiobookshelf:
+        icon: audiobookshelf.svg
+        href: http://<LAN_IP>:13379
+        server: shinas
+        container: audiobookshelf
+        widget:
+          type: audiobookshelf
+          url: http://<LAN_IP>:13379
+          key: "{{HOMEPAGE_VAR_ABS_KEY}}"
+    - Vaultwarden:
+        icon: vaultwarden.svg
+        href: http://<LAN_IP>:11001
+        server: shinas
+        container: vaultwarden
+    - Authentik:
+        icon: authentik.svg
+        href: http://<LAN_IP>:9000
+        server: shinas
+        container: authentik-server-1
+        widget:
+          type: authentik
+          url: http://<LAN_IP>:9000
+          key: "{{HOMEPAGE_VAR_AUTHENTIK_KEY}}"
+          version: 2
+    - Restic Backups:
+        icon: restic.svg
+        description: nightly encrypted snapshots
+        server: shinas
+        container: restic-rest-server
+    - Resume Site:
+        icon: mdi-console
+        href: http://<LAN_IP>:8088
+        server: shinas
+        container: resume-site
+
+- Media Automation:
+    - Sonarr:
+        icon: sonarr.svg
+        href: http://<LAN_IP>:8989
+        server: shinas
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://<LAN_IP>:8989
+          key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
+    - Radarr:
+        icon: radarr.svg
+        href: http://<LAN_IP>:7878
+        server: shinas
+        container: radarr
+        widget:
+          type: radarr
+          url: http://<LAN_IP>:7878
+          key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
+    - Lidarr:
+        icon: lidarr.svg
+        href: http://<LAN_IP>:8686
+        server: shinas
+        container: lidarr
+        widget:
+          type: lidarr
+          url: http://<LAN_IP>:8686
+          key: "{{HOMEPAGE_VAR_LIDARR_KEY}}"
+    - Prowlarr:
+        icon: prowlarr.svg
+        href: http://<LAN_IP>:9696
+        server: shinas
+        container: prowlarr
+        widget:
+          type: prowlarr
+          url: http://<LAN_IP>:9696
+          key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
+    - qBittorrent:
+        icon: qbittorrent.svg
+        href: http://<LAN_IP>:8701     # guessed from gluetun's ports, fix if the WebUI lives elsewhere
+        description: behind gluetun / ProtonVPN
+        server: shinas
+        container: qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://<LAN_IP>:8701
+          username: "{{HOMEPAGE_VAR_QBIT_USER}}"
+          password: <redacted>
+    - Gluetun:
+        icon: gluetun.svg
+        description: VPN tunnel for the arr-stack
+        server: shinas
+        container: gluetun

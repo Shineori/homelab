@@ -1,0 +1,18 @@
+- Infra:
+    - Cloudflare:
+        - icon: cloudflare.svg
+          href: https://dash.cloudflare.com
+    - Zero Trust:
+        - icon: cloudflare-zero-trust.svg
+          href: https://one.dash.cloudflare.com
+    - playit.gg:
+        - icon: mdi-tunnel
+          href: https://playit.gg/account
+
+- Code:
+    - GitHub:
+        - icon: github.svg
+          href: https://github.com/Shineori
+    - Vencord:
+        - icon: mdi-discord
+          href: https://github.com/Vendicated/Vencord

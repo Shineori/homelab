@@ -1,6 +1,6 @@
 services:
   jellyfin:
-    image: lscr.io/linuxserver/jellyfin:12.1ubu2604-ls51
+    image: lscr.io/linuxserver/jellyfin:12.2ubu2604-ls55
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
       start_period: 30s   # ← give it 30s before health checks start

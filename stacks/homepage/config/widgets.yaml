@@ -1,0 +1,25 @@
+# Top bar
+- greeting:
+    text_size: xl
+    text: Welcome back.
+
+- datetime:
+    text_size: md
+    format:
+      dateStyle: long
+      timeStyle: short
+      hour12: true
+
+- openmeteo:
+    label: Home
+    latitude: <redacted>
+    longitude: <redacted>
+    units: imperial
+    cache: 15
+
+- search:
+    provider: custom
+    url: http://<LAN_IP>:8888/search?q=   # your own SearXNG
+    target: _blank
+    suggestionUrl: http://<LAN_IP>:8888/autocompleter?q=
+    showSearchSuggestions: true

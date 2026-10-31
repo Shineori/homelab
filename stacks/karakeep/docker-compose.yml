@@ -14,7 +14,7 @@ services:
       DATA_DIR: /data # DON'T CHANGE THIS
   chrome:
     # official Karakeep browser image (stealthier crawler), replaces zenika/alpine-chrome:124
-    image: ghcr.io/karakeep-app/karakeep-chrome:release@sha256:c51a8c8e6c3c1040a50fa0ecfd0b2fc298401b4229262636552458151f6f18fa
+    image: ghcr.io/karakeep-app/karakeep-chrome:release
     restart: unless-stopped
     init: true
     command:

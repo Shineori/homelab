@@ -1,0 +1,12 @@
+[Unit]
+Description=Basic Memory MCP (HTTP, Authentik OIDC) for <redacted-domain>
+After=network-online.target
+
+[Service]
+EnvironmentFile=%h/.config/basic-memory-remote/env
+ExecStart=%h/.local/share/uv/tools/basic-memory/bin/python %h/basic-memory-remote/serve.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

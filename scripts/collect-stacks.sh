@@ -27,13 +27,22 @@ MAP=(
   nas:jellyfin:jellyfin  nas:immich:immich
   nas:arr-stack:arr-stack  nas:qbittorrent-mam:qbittorrent
   nas:audiobookshelf:AudioBookShelf  nas:flowcase:Flowcase
-  nas:terraria:terraria  nas:resume-site:resume-site  nas:diun:diun  nas:restic-server:restic-server
+  nas:terraria:terraria  nas:resume-site:sites/resume-site  nas:diun:diun  nas:restic-server:restic-server
+  nas:homepage-agent:homepage-agent/shinas-agent
   # ShineoriServer: RAM-hungry apps with small data (moved off the NAS)
   laptop:immich-ml:immich-ml  laptop:uptime-kuma:uptime-kuma
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
   laptop:minecraft:minecraft  laptop:ollama-stack:ollama-stack
   laptop:omada-controller:omada  laptop:paperless:paperless  laptop:addy:addy
-  laptop:gmail-cleaner:gmail-cleaner
+  laptop:gmail-cleaner:gmail-cleaner  laptop:homepage:homepage
+)
+
+# Extra (non-compose) files worth keeping, per repo folder. Paths are relative to the stack folder.
+# They go through the same redact() as compose files.
+EXTRAS=(
+  "ollama-stack:searxng-nginx/nginx.conf"
+  "homepage:config/settings.yaml config/docker.yaml config/bookmarks.yaml"
+  "resume-site:nginx.conf"
 )
 
 # Your own domain(s) as one regex: every host under them becomes <redacted-domain>.
@@ -48,13 +57,18 @@ fi
 
 SECRET_KEYS='[A-Za-z0-9_]*(PASS|PASSWORD|PASSWD|TOKEN|SECRET|PRIVATE|API_?KEY|AUTH_KEY|WEBHOOK|CLIENT_ID|SMTP_USER|LICENSE|SALT|ENCRYPTION|ADMIN_USER|ADMIN_EMAIL|ADMIN_NAME)[A-Za-z0-9_]*'
 
+# redact [code]: "code" skips the KEY=value rule, which would break source files
+# like `TOKEN = os.environ.get(...)` (code reads secrets from env, it doesn't hold them)
 redact() {
+  local keyrule="s/^([[:space:]]*-?[[:space:]]*\"?)(${SECRET_KEYS})([[:space:]]*[:=][[:space:]]*).+/\1\2\4<redacted>/I"
+  [ "${1:-}" = code ] && keyrule='s/^$//'
   sed -E \
-    -e "s/^([[:space:]]*-?[[:space:]]*\"?)(${SECRET_KEYS})([[:space:]]*[:=][[:space:]]*).+/\1\2\4<redacted>/I" \
+    -e "$keyrule" \
     -e 's/(--token[ =])[^ "]+/\1<redacted>/g' \
     -e 's#https://(discord(app)?\.com)/api/webhooks/[^ "]+#https://\1/api/webhooks/<redacted>#g' \
     -e 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<redacted-email>/g' \
     -e 's/192\.168\.[0-9]+\.[0-9]+/<LAN_IP>/g' \
+    -e 's/^([[:space:]]*(latitude|longitude):[[:space:]]*)[-0-9.]+.*/\1<redacted>/' \
     -E -e "s/([A-Za-z0-9-]+\.)*(${PRIVATE_DOMAINS})/<redacted-domain>/g"
 }
 
@@ -84,6 +98,17 @@ for entry in "${MAP[@]}"; do
     name="$(basename "$e")"
     # comments can mention domains or IPs too, so they go through redact() as well
     sed -E 's/^([[:space:]]*#?[[:space:]]*[A-Za-z_][A-Za-z0-9_]*)=.*/\1=/' "$e" | redact > "$REPO/stacks/$dest/${name}.example"
+  done
+  for x in "${EXTRAS[@]}"; do
+    [ "${x%%:*}" = "$dest" ] || continue
+    for rel in ${x#*:}; do
+      [ -f "$src/$rel" ] || continue
+      mkdir -p "$REPO/stacks/$dest/$(dirname "$rel")"
+      case "$rel" in
+        *.py|*.js) redact code < "$src/$rel" > "$REPO/stacks/$dest/$rel" ;;
+        *)         redact      < "$src/$rel" > "$REPO/stacks/$dest/$rel" ;;
+      esac
+    done
   done
   [ $found = 1 ] && echo "ok    $dest  <-  $src" || echo "WARN  $dest  (folder exists but no compose file)"
 done

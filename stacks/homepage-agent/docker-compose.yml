@@ -1,0 +1,28 @@
+# Tiny agent stack for ShiNAS (~/docker/homepage-agent)
+# Lets Homepage on ShineoriServer see the NAS's containers + system stats.
+# Tags pinned + verified 2026-10-27
+
+services:
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0
+    container_name: homepage-dockerproxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1   # read-only container list
+      POST: 0         # nothing can change containers through this
+    ports:
+      - "<LAN_IP>:2376:2375"   # LAN IP only; 2376 so it never clashes with Diun's proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  glances:
+    image: nicolargo/glances:4.5.8-full
+    container_name: glances
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    mem_limit: 256m   # ShiNAS only has ~1.7 GB free, keep it on a leash
+    environment:
+      GLANCES_OPT: "-w --disable-webui -B <LAN_IP>"   # port 61208, LAN only
+    volumes:
+      - /etc/os-release:/etc/os-release:ro

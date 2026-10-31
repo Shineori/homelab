@@ -1,0 +1,8 @@
+# Read-only docker-socket-proxies (POST=0), one per machine
+shineoriserver:
+  host: dockerproxy      # same compose network as Homepage
+  port: 2375
+
+shinas:
+  host: <LAN_IP>     # homepage-agent stack on the NAS
+  port: 2376

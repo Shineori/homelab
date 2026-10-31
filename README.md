@@ -64,6 +64,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Cloudflare Tunnel](docs/services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
 | [Tailscale](docs/services/tailscale.md) | ShiNAS | 🟢 | Private remote access to the NAS and friend file sharing, nothing public |
 | [Omada Controller](docs/services/omada-controller.md) | ShineoriServer | ⏸️ | Manages TP-Link Omada network gear |
+| [Homepage](docs/services/homepage.md) | ShineoriServer + ShiNAS agent | 🟢 | Command center dashboard: every service, live container status, both machines' stats |
 | [Homarr](docs/services/homarr.md) | ShineoriServer | ⚫ | Dashboard / home screen for every service |
 | [Diun](docs/services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |
 | [Uptime Kuma](docs/services/uptime-kuma.md) | ShineoriServer | 🟢 | Uptime monitoring and alerts for every service |
@@ -103,6 +104,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 |---|---|---|---|
 | [Ollama + Open WebUI + SearXNG](docs/services/ollama-stack.md) | ShineoriServer | 🟢 | Local LLM stack with private web search |
 | [Nimble + Decision Bridge](docs/services/nimble.md) | ShineoriServer + Windows PC | 🟢 | Local decision model that gives Claude typed yes/no, choice and score answers |
+| [Basic Memory](docs/services/basic-memory.md) | ShineoriServer | 🟢 | Shared Markdown memory for my AI assistants, as a remote MCP server behind Authentik |
 | [Hermes Agent](docs/services/hermes-agent.md) | ShineoriServer | ⚫ | Local AI agent that reads release notes and posts update verdicts in Discord, behind layered guardrails |
 
 ### Security labs

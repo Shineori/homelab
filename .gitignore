@@ -41,3 +41,5 @@ site/
 
 # --- un-ignore our own files caught by the patterns above ---
 !.github/workflows/secret-scan.yml
+# Homepage's dashboard YAML (redacted; API keys stay in .env)
+!stacks/homepage/config/

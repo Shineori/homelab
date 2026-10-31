@@ -2,7 +2,7 @@
 #  <redacted-domain>  |  Shineori SMP (Java + Bedrock)
 #    - mc     : Fabric server (Java 25565/tcp, Bedrock 19132/udp)
 #               Geyser + Floodgate (Fabric) for Bedrock, NetherNet via Warden
-#               BlueMap web map on 8100/tcp (LAN port; published through the NAS's tunnel)
+#               BlueMap web map on 8100/tcp (LAN: http://<LAN_IP>:8100)
 #    - playit : tunnel agent, exposes both to the internet
 #  No router port-forward or DDNS needed.
 # =============================================================
@@ -37,8 +37,6 @@ services:
         spark
         scalablelux:g4eqNSKd
         c2me-fabric:gKKkuSYc
-        open-parties-and-claims
-        forge-config-api-port
         netherportalfix
         balm
         appleskin
@@ -47,23 +45,24 @@ services:
         lithostitched
         jei
         mezzconfig
+        fabric-language-kotlin
+        veinminer:QMYktnGo   # pinned 2.13.0 (matches friends pack)
+        serverbacksnow
       MODRINTH_ALLOWED_VERSION_TYPE: "beta"   # Geyser/Floodgate only publish beta builds on Modrinth
-      # scalablelux + c2me-fabric are pinned to alpha version IDs (only 26.3 builds); bump them when VERSION changes
-      # no comments inside the MODRINTH_PROJECTS block: they'd be read as part of the mod name
       MEMORY: "6G"
       DIFFICULTY: "normal"
-      LEVEL: "Brrr"
+      LEVEL: "Frenz102626"
       SEED: "<redacted>"
-      MOTD: "<redacted-domain> | Shineori SMP"
+      MOTD: "For Shineoris' Friends"
       MAX_PLAYERS: "12"
       ONLINE_MODE: "TRUE"          # keep TRUE: tunnel is public, only legit accounts
-      ENABLE_WHITELIST: "TRUE"     # extra important with a public tunnel
+      ENABLE_WHITELIST: "FALSE"     # extra important with a public tunnel
       OPS: "Shineori"
       TZ: "America/New_York"
     ports:
       - "25565:25565"              # Java (playit tunnel -> <LAN_IP>:25565)
       - "19132:19132/udp"          # Bedrock via Geyser (playit UDP tunnel -> <LAN_IP>:19132)
-      - "8100:8100"                # BlueMap web map (LAN port)
+      - "8100:8100"                # BlueMap web map (LAN only, no tunnel yet)
     volumes:
       - ./mc-data:/data
     healthcheck:

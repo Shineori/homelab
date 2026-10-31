@@ -1,0 +1,33 @@
+title: Shineori Command Center
+favicon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/homepage.svg
+theme: dark
+color: purple
+headerStyle: boxed
+statusStyle: dot          # small green/red dot per service
+hideVersion: true
+target: _blank
+useEqualHeights: true
+
+background:
+  image: https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=2560&q=80
+  blur: sm
+  brightness: 50
+  opacity: 60
+
+layout:
+  Machines:
+    style: row
+    columns: 2
+    icon: mdi-server-network
+  ShineoriServer:
+    style: row
+    columns: 4
+    icon: mdi-laptop
+  ShiNAS:
+    style: row
+    columns: 4
+    icon: mdi-nas
+  Media Automation:
+    style: row
+    columns: 4
+    icon: mdi-robot-industrial

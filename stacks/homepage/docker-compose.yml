@@ -1,0 +1,45 @@
+# Homepage command center: runs on ShineoriServer (~/docker/homepage)
+# Open at http://<LAN_IP>:3020
+# Tags pinned + verified to exist on 2026-10-27
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:v2.7.0
+    container_name: homepage
+    restart: unless-stopped
+    ports:
+      - "<LAN_IP>:3020:3000"      # LAN IP only (3001/3003/3009 are taken nearby, 3020 is free)
+    env_file: .env                   # API keys live here, never in the YAML (safe for the public repo)
+    environment:
+      PUID: 1000
+      PGID: 100
+      HOMEPAGE_ALLOWED_HOSTS: "<LAN_IP>:3020"   # required since v1.0, or you get a "host validation failed" page
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      - dockerproxy
+
+  # Read-only view of this server's containers for the status dots + CPU/RAM per container
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.5.0
+    container_name: homepage-dockerproxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1   # list/inspect containers only
+      POST: 0         # no start/stop/delete, ever
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # no ports: only Homepage can reach it on the internal compose network
+
+  # CPU / RAM / temps / disk for this laptop, API only (no web UI)
+  glances:
+    image: nicolargo/glances:4.5.8-full
+    container_name: glances
+    restart: unless-stopped
+    pid: host
+    network_mode: host
+    environment:
+      GLANCES_OPT: "-w --disable-webui -B <LAN_IP>"   # LAN IP only, port 61208
+    volumes:
+      - /etc/os-release:/etc/os-release:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro      # lets Glances count containers too

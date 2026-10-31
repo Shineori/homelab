@@ -12,7 +12,7 @@
 
 Compose file: [`stacks/homarr/`](https://github.com/shineori/homelab/tree/main/stacks/homarr)
 
-> ⚫ **Retired on 2026-10-28.** I removed Homarr completely from both machines; my dashboard is now [Homepage](https://gethomepage.dev). This page stays up as a record of how it was set up and what I learned.
+> ⚫ **Retired on 2026-10-28.** I removed Homarr completely from both machines; my dashboard is now [Homepage](homepage.md). This page stays up as a record of how it was set up and what I learned.
 
 > 🚚 **Moved from ShiNAS to ShineoriServer** in October 2026 to free up RAM on the NAS. Full story: [Moving services off the NAS](../infrastructure/migration.md).
 

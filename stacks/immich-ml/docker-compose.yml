@@ -1,18 +1,20 @@
-# Immich machine learning on ShineoriServer (CPU-only), for the NAS's Immich server
+# Immich machine learning on the laptop's CPU, for the NAS's Immich server
 services:
   immich-machine-learning:
     container_name: immich_machine_learning
-    # must match the NAS's Immich version exactly; CPU build (no -cuda)
-    image: ghcr.io/immich-app/immich-machine-learning:v3.3.4
-    environment:
-      - MACHINE_LEARNING_MODEL_TTL=300   # cache models for 5 minutes, then discard
-      - MACHINE_LEARNING_MODEL_REVISION=v2   # optimized re-exports: faster, less RAM on CPU
+    # must match the NAS's Immich version exactly; no -cuda = CPU build
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.5
     volumes:
       - model-cache:/cache            # downloaded AI models live here
+    environment:
+      - MACHINE_LEARNING_MODEL_TTL=300
+      - MACHINE_LEARNING_MODEL_REVISION=v2   # optimized re-exports: faster, less RAM on CPU
     ports:
       - "<LAN_IP>:3003:3003"       # LAN only, for the NAS to reach it
     restart: unless-stopped
-    cpus: "3"                 # 3 cores
+    # cap Immich's CPU so Hermes/Ollama keep most of the cores
+    # (use roughly 1/4 of your nproc number)
+    cpus: "3"
 
 volumes:
   model-cache:
