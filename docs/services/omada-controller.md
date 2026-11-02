@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
 | **Status** | ⏸️ on demand (started only when I need it) |
-| **Exposed?** | LAN only |
+| **Exposed?** | LAN only, with a real HTTPS certificate on a private DNS name |
 | **Version** | 6.3.0.111 (`mbentley/omada-controller`, pinned) |
 
 Compose file: [`stacks/omada-controller/`](https://github.com/shineori/homelab/tree/main/stacks/omada-controller)
@@ -29,6 +29,17 @@ flowchart LR
     ctl --> logs[(./omada-logs)]
 ```
 
+The web page uses a real certificate, which renews on its own:
+
+```mermaid
+flowchart LR
+    timer[Weekly systemd timer] --> certbot[Certbot container]
+    certbot -- "DNS-01 challenge" --> cf[Cloudflare DNS]
+    cf --> le[Let's Encrypt]
+    le --> folder[(/etc/omada-cert/cert<br/>root only)]
+    folder -- "read at startup,<br/>restarts only if changed" --> ctl[Omada Controller]
+```
+
 ## Security decisions
 
 | Decision | Why |
@@ -37,6 +48,11 @@ flowchart LR
 | **`network_mode: host`** | Device discovery uses broadcast traffic on the local network, which Docker's default bridge network blocks. It also means new ports like v6's 29817 work without any compose change. |
 | **`stop_grace_period: 60s`** | Gives the built-in MongoDB time to shut down cleanly, so the database isn't corrupted on stop |
 | **Pinned exact version** | `latest` on this image stays on v5 on purpose, so pinning is the only way to get v6, and upgrades happen on my schedule |
+| **DNS-01 certificate** | Let's Encrypt can check domain ownership through a DNS record, so the controller gets a trusted certificate without being reachable from the internet |
+| **DNS-only record to a private IP** | The name resolves to a LAN address and skips Cloudflare's proxy. Anyone can see the private IP, but they can't reach it from outside. |
+| **API token limited to DNS on one zone** | Renewal only needs to create DNS records, so a leaked token can't touch the rest of the account. It still controls that zone's DNS, so it stays in a root-only file. |
+| **Secrets kept in `/etc/omada-cert`** | The token and private key stay outside the stack folder, so they can't end up in this public repo or the app backups |
+| **`/cert` folder, not the web upload** | The image builds its keystore from `/cert` at startup, which can be automated. A certificate uploaded in the web page goes into MongoDB, and the `/cert` method then stops working. |
 | **`ulimits: nofile 65536`** | The database is thousands of small files. Docker's default limit of 1,024 open files crashed the MongoDB upgrade (see the troubleshooting log). |
 
 ## Setup notes
@@ -57,6 +73,14 @@ docker run -it --rm --ulimit nofile=65536:65536 \
 docker compose up -d
 ```
 
+6. **Real HTTPS certificate:** take a controller backup, then add a DNS-only A record pointing your chosen name at the server, and create a Cloudflare token with DNS edit rights on that one zone. Set the name and IP at the top of [`scripts/omada-cert-install.sh`](https://github.com/shineori/homelab/blob/main/scripts/omada-cert-install.sh), keep it next to [`omada-cert-renew.sh`](https://github.com/shineori/homelab/blob/main/scripts/omada-cert-renew.sh), and run it with sudo. It tests against Let's Encrypt's staging server, gets the certificate, adds this line to the compose file, asks before restarting, and sets up the weekly timer:
+
+```yaml
+      - /etc/omada-cert/cert:/cert:ro
+```
+
+To roll back, restore the compose file and `eap.keystore` from `/etc/omada-cert/rollback`, then run `docker compose up -d`.
+
 TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB and jsvc on the host) is for bare-metal installs. It isn't needed with Docker.
 
 ## Troubleshooting log
@@ -65,10 +89,14 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 |---|---|---|---|
 | 2026-10-28 | The MongoDB 3.6 → 8 migration crashed at the 4.0 step with `WT_PANIC` and an invariant failure. It rolled itself back. | The real line in `mongodb_upgrade.log`: **`Too many open files`**. The repair step opens every collection and index file at once (about 6,500), and Docker's default limit is 1,024. Normal running never hit it because files are opened a few at a time. | Reran the migration with `--ulimit nofile=65536:65536`. Every step from 3.6 to 8.0 passed. Added the same limit to the compose file. |
 | 2026-10-28 | v6 showed a "Port Access Required" popup for TCP 29817 | v6 added a new port for devices. The notice appears for everyone after upgrading. | Nothing to do: host networking exposes it, and a test connection from another LAN machine succeeded |
+| 2026-11-02 | Browser refused the controller page with `ERR_CERT_AUTHORITY_INVALID` | The controller ships with a self-signed certificate for `localhost`, which nothing trusts | Issued a Let's Encrypt certificate over DNS-01 and loaded it through `/cert`. A test request now verifies the full chain. |
 
 ## What I'd harden next
 
 - [x] Back up `./omada-data` (and export the controller's own backup) before any upgrade ✅ *Done for the v6 upgrade*
+- [x] Replace the self-signed web certificate with a trusted one that renews on its own. *Done 2026-11-02*
+- [ ] Turn on the controller's auto backup and add those exports to the nightly backup. Right now only manual backups exist.
+- [ ] Add an Uptime Kuma certificate-expiry alert, so a failed renewal gets noticed before the certificate runs out
 - [ ] Remove the two unused named volumes declared at the bottom of the compose file (the stack uses folders instead)
 - [ ] Delete the old copy of the stack left on the NAS so the v5 controller can't be started there by accident
 - [ ] Clean up the migration leftovers (`mongodb-preupgrade.tar` and the upgrade logs) once v6 has been stable for a while
@@ -81,4 +109,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - **Databases upgrade in steps.** MongoDB can't jump from 3.6 to 8; it has to pass through 4.0, 4.2, 4.4, 5.0, 6.0 and 7.0
 - **A backtrace says where, the log says why.** The crash dump only showed the function that failed. The cause was one plain-English line further up the log.
 - **Container limits are real limits.** `ulimit` inside a container is set by Docker, not by the app, and it can break things that work fine at normal load
+- **A certificate proves a name, not an IP.** That's why the fix needed a DNS name first, even for a LAN-only app
+- **DNS-01 vs HTTP-01:** proving ownership through DNS means nothing has to be opened to the internet
+- **Certificate names are public.** Issued certificates go into public transparency logs, so a subdomain name isn't a secret even when the service is private
 - **`latest` doesn't always mean newest.** This image keeps `latest` on v5 so a major upgrade can't happen by surprise

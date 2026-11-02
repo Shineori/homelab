@@ -25,6 +25,7 @@ services:
     volumes:
       - ./omada-data:/opt/tplink/EAPController/data
       - ./omada-logs:/opt/tplink/EAPController/logs
+      - /etc/omada-cert/cert:/cert:ro
 
 volumes:
   omada-data:
