@@ -49,6 +49,8 @@ flowchart LR
 | **`stop_grace_period: 60s`** | Gives the built-in MongoDB time to shut down cleanly, so the database isn't corrupted on stop |
 | **Pinned exact version** | `latest` on this image stays on v5 on purpose, so pinning is the only way to get v6, and upgrades happen on my schedule |
 | **Cloud access off** | I sign in locally and reach the controller over my own VPN when I'm away, so there's no need for a path through the vendor's cloud |
+| **Separate guest and IoT VLANs** | Guests and smart devices get internet access but are blocked by firewall rules from starting connections to the home network, which limits what a compromised device can reach |
+| **Printer discovery with mDNS** | Devices on the home network can still find the printer after it moves to the IoT VLAN, without opening the whole VLAN back up |
 | **DNS-01 certificate** | Let's Encrypt can check domain ownership through a DNS record, so the controller gets a trusted certificate without being reachable from the internet |
 | **DNS-only record to a private IP** | The name resolves to a LAN address and skips Cloudflare's proxy. Anyone can see the private IP, but they can't reach it from outside. |
 | **API token limited to DNS on one zone** | Renewal only needs to create DNS records, so a leaked token can't touch the rest of the account. It still controls that zone's DNS, so it stays in a root-only file. |
@@ -98,7 +100,9 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - [x] Replace the self-signed web certificate with a trusted one that renews on its own. *Done 2026-11-02*
 - [x] Turn on the controller's auto backup (daily, keeps 7). *Done 2026-11-02*
 - [ ] Add those auto backup files to the nightly backup, so a copy lives off this machine
-- [ ] Split the flat network into VLANs, starting with guest Wi-Fi and smart devices
+- [x] Create guest and IoT VLANs with firewall rules between them. *Done 2026-11-02*
+- [ ] Finish moving smart devices to the IoT VLAN and test printing across VLANs
+- [ ] Give the servers their own VLAN
 - [ ] Add an Uptime Kuma certificate-expiry alert, so a failed renewal gets noticed before the certificate runs out
 - [ ] Remove the two unused named volumes declared at the bottom of the compose file (the stack uses folders instead)
 - [ ] Delete the old copy of the stack left on the NAS so the v5 controller can't be started there by accident
@@ -115,4 +119,6 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - **A certificate proves a name, not an IP.** That's why the fix needed a DNS name first, even for a LAN-only app
 - **DNS-01 vs HTTP-01:** proving ownership through DNS means nothing has to be opened to the internet
 - **Certificate names are public.** Issued certificates go into public transparency logs, so a subdomain name isn't a secret even when the service is private
+- **Packet counters can map a network.** An uplink's traffic roughly equals every other port combined, which helped identify a switch's router link without touching a cable
+- **Unmanaged switches are invisible to the controller.** The topology view can show devices as directly attached when they aren't
 - **`latest` doesn't always mean newest.** This image keeps `latest` on v5 so a major upgrade can't happen by surprise
