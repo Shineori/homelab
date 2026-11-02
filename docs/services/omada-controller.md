@@ -48,6 +48,7 @@ flowchart LR
 | **`network_mode: host`** | Device discovery uses broadcast traffic on the local network, which Docker's default bridge network blocks. It also means new ports like v6's 29817 work without any compose change. |
 | **`stop_grace_period: 60s`** | Gives the built-in MongoDB time to shut down cleanly, so the database isn't corrupted on stop |
 | **Pinned exact version** | `latest` on this image stays on v5 on purpose, so pinning is the only way to get v6, and upgrades happen on my schedule |
+| **Cloud access off** | I sign in locally and reach the controller over my own VPN when I'm away, so there's no need for a path through the vendor's cloud |
 | **DNS-01 certificate** | Let's Encrypt can check domain ownership through a DNS record, so the controller gets a trusted certificate without being reachable from the internet |
 | **DNS-only record to a private IP** | The name resolves to a LAN address and skips Cloudflare's proxy. Anyone can see the private IP, but they can't reach it from outside. |
 | **API token limited to DNS on one zone** | Renewal only needs to create DNS records, so a leaked token can't touch the rest of the account. It still controls that zone's DNS, so it stays in a root-only file. |
@@ -95,7 +96,9 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 
 - [x] Back up `./omada-data` (and export the controller's own backup) before any upgrade ✅ *Done for the v6 upgrade*
 - [x] Replace the self-signed web certificate with a trusted one that renews on its own. *Done 2026-11-02*
-- [ ] Turn on the controller's auto backup and add those exports to the nightly backup. Right now only manual backups exist.
+- [x] Turn on the controller's auto backup (daily, keeps 7). *Done 2026-11-02*
+- [ ] Add those auto backup files to the nightly backup, so a copy lives off this machine
+- [ ] Split the flat network into VLANs, starting with guest Wi-Fi and smart devices
 - [ ] Add an Uptime Kuma certificate-expiry alert, so a failed renewal gets noticed before the certificate runs out
 - [ ] Remove the two unused named volumes declared at the bottom of the compose file (the stack uses folders instead)
 - [ ] Delete the old copy of the stack left on the NAS so the v5 controller can't be started there by accident
