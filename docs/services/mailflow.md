@@ -82,7 +82,7 @@ flowchart LR
 |---|---|---|
 | Plain HTTP reachable on the LAN | The default install published an HTTP port too | Stopped publishing it |
 | Another app could read MailFlow's `.env` | NextExplorer mounted the whole Docker folder, and both run as the same user | Hid the folder from it with a `tmpfs` mount, then rotated the secrets |
-| That fix quietly disappeared | I later replaced NextExplorer's compose file with a copy that didn't include it | Put it back before NextExplorer ran again |
+| That fix quietly disappeared | I later replaced NextExplorer's compose file with a copy that didn't include it | Put it back, then rotated the secrets and TLS certificate again, since no mail accounts depended on them yet |
 
 ## What I'd harden next
 

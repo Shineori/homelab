@@ -6,7 +6,7 @@
 |---|---|
 | **Host** | Windows PC |
 | **Category** | Apps |
-| **Status** | 🟡 in progress (installed, library setup still to finish) |
+| **Status** | 🟡 in progress (store accounts connected, emulators still to add) |
 | **Exposed?** | No. It's a desktop app, not a network service. |
 | **Version** | `10.63` |
 
