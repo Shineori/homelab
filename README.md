@@ -89,6 +89,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Paperless-ngx](docs/services/paperless.md) | ShineoriServer | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](docs/services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
 | [Gmail Cleaner](docs/services/gmail-cleaner.md) | ShineoriServer | 🟢 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
+| [NextExplorer](docs/services/nextexplorer.md) | ShineoriServer | 🟢 | Web file explorer across the laptop and the NAS (LAN only) |
 
 ### Game servers
 

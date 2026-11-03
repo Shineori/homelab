@@ -59,6 +59,7 @@ nav:
           - "Paperless-ngx": services/paperless.md
           - "Karakeep": services/karakeep.md
           - "Gmail Cleaner": services/gmail-cleaner.md
+          - "NextExplorer": services/nextexplorer.md
       - Game servers:
           - "Terraria (tModLoader)": services/terraria.md
           - "Minecraft + playit": services/minecraft.md

@@ -1,0 +1,54 @@
+services:
+  nextexplorer:
+    image: nxzai/explorer:v4.0.1
+    container_name: nextexplorer
+    restart: unless-stopped
+    ports:
+      # LAN only. 3000 is taken by Open WebUI.
+      - "<LAN_IP>:3070:3000"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      NODE_ENV: production
+      PUBLIC_URL: http://<LAN_IP>:3070
+      PUID: "1000"
+      PGID: "1000"
+      AUTH_MODE: local
+      # The admin web terminal is a shell inside this container. Not needed here.
+      TERMINAL_ENABLED: "false"
+      ACTIVITY_ENABLED: "true"
+      SHOW_VOLUME_USAGE: "true"
+    volumes:
+      - ./config:/config
+      - ./cache:/cache
+      # Each /mnt/<Label> becomes a volume in the sidebar.
+      # Hand-picked folders, so ~/.ssh and other dotfile credentials stay out of the container.
+      - /home/shineori/Files:/mnt/Server-Files
+      - /home/shineori/docker:/mnt/Server-Docker:ro
+      - /home/shineori/backups:/mnt/Server-Backups:ro
+      # ShiNAS SMB shares (mounted on the host by setup-shinas-mount.sh).
+      # rslave: if a share mounts after this container starts, it still shows up here.
+      - type: bind
+        source: /mnt/shinas/home
+        target: /mnt/NAS-Home
+        bind: { propagation: rslave }
+      - type: bind
+        source: /mnt/shinas/hardcoressd
+        target: /mnt/NAS-HardcoreSSD
+        bind: { propagation: rslave }
+      - type: bind
+        source: /mnt/shinas/share
+        target: /mnt/NAS-Share
+        bind: { propagation: rslave }
+      - type: bind
+        source: /mnt/shinas/isos
+        target: /mnt/NAS-ISOs
+        bind: { propagation: rslave }
+      - type: bind
+        source: /mnt/shinas/docker
+        target: /mnt/NAS-Docker
+        read_only: true
+        bind: { propagation: rslave }
+    tmpfs:
+      # Hide this app's own database and cache from its Server-Docker view.
+      - /mnt/Server-Docker/nextexplorer
