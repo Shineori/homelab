@@ -89,7 +89,9 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Paperless-ngx](services/paperless.md) | ShineoriServer | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
 | [Gmail Cleaner](services/gmail-cleaner.md) | ShineoriServer | 🟢 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
-| [NextExplorer](services/nextexplorer.md) | ShineoriServer | 🟢 | Web file explorer across the laptop and the NAS (LAN only) |
+| [NextExplorer](services/nextexplorer.md) | ShineoriServer | ⏸️ | Web file explorer across the laptop and the NAS (LAN only) |
+| [MailFlow](services/mailflow.md) | ShineoriServer | 🟢 | Unified webmail for all my accounts, audited and hardened (LAN only) |
+| [Playnite](services/playnite.md) | Windows PC | 🟡 | One game library for store launchers and emulators |
 
 ### Game servers
 

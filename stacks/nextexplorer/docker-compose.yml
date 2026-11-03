@@ -52,3 +52,5 @@ services:
     tmpfs:
       # Hide this app's own database and cache from its Server-Docker view.
       - /mnt/Server-Docker/nextexplorer
+      # Hide MailFlow secrets (.env, TLS key) from this app.
+      - /mnt/Server-Docker/mailflow

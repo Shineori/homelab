@@ -60,6 +60,8 @@ nav:
           - "Karakeep": services/karakeep.md
           - "Gmail Cleaner": services/gmail-cleaner.md
           - "NextExplorer": services/nextexplorer.md
+          - "MailFlow": services/mailflow.md
+          - "Playnite": services/playnite.md
       - Game servers:
           - "Terraria (tModLoader)": services/terraria.md
           - "Minecraft + playit": services/minecraft.md

@@ -1,0 +1,151 @@
+# MailFlow, hardened after the 2026-11-03 audit of v4.1.2 (commit d8f0f2a).
+# Images are pinned by digest: to update, check the release, then change tag AND digest.
+# LAN-only HTTPS. Plain HTTP is not published. Postgres and Redis have no internet route.
+
+x-hardening: &hardening
+  restart: unless-stopped
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  frontend:
+    <<: *hardening
+    image: ghcr.io/maathimself/mailflow-frontend:4.1.2@sha256:6b9b03a53663c0d9dfeace31c4f056a4437b40783b34c755d2dd76f7fedd5a16
+    container_name: mailflow-frontend
+    # nginx's master process starts as root, opens the key, then drops to the nginx user.
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    mem_limit: 256m
+    pids_limit: 128
+    ports:
+      - "${APP_PORT}:443"
+    tmpfs:
+      - /var/cache/nginx
+      - /run
+      - /tmp
+    volumes:
+      - ./certs:/etc/nginx/ssl:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO/dev/null http://127.0.0.1:80/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - web
+
+  backend:
+    <<: *hardening
+    image: ghcr.io/maathimself/mailflow-backend:4.1.2@sha256:1f70c4de94ad1c9604717dfbb737ddafc844ba6e20f76084c1c483580d3fe7be
+    container_name: mailflow-backend
+    # Room for a send in flight to finish on a restart (the backend waits up to 25 s).
+    stop_grace_period: 30s
+    mem_limit: 3g
+    pids_limit: 512
+    tmpfs:
+      # Image cache and temp files live in RAM and vanish on restart.
+      - /tmp:size=768m,uid=1000,gid=1000,mode=0700
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SESSION_SECRET: ${SESSION_SECRET}
+      APP_URL: ${APP_URL}
+      FRONTEND_URL: ${APP_URL}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: mailflow
+      DB_USER: mailflow
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      # Unused features switched off. Diun already reports new versions.
+      MS_BUILTIN_APP: "false"
+      UPDATE_CHECK_DISABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - web
+      - db
+
+  postgres:
+    <<: *hardening
+    image: postgres:16.15-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+    container_name: mailflow-postgres
+    user: "70:70"
+    mem_limit: 2g
+    pids_limit: 256
+    stop_grace_period: 30s
+    environment:
+      POSTGRES_DB: mailflow
+      POSTGRES_USER: mailflow
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    tmpfs:
+      - /var/run/postgresql:uid=70,gid=70,mode=0775
+      - /tmp:uid=70,gid=70,mode=0700
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mailflow -d mailflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - db
+
+  redis:
+    <<: *hardening
+    image: redis:7.4.12-alpine@sha256:8da19c7399dca900c6822a1cf30f9d2285585e2c4b457ff4095b0f4500054d3f
+    container_name: mailflow-redis
+    user: "999:1000"
+    mem_limit: 256m
+    pids_limit: 64
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\" --save 60 1 --loglevel warning"]
+    tmpfs:
+      - /tmp
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - db
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  web:
+    driver: bridge
+  db:
+    driver: bridge
+    internal: true

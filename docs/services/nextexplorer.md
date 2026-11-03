@@ -6,8 +6,8 @@
 |---|---|
 | **Host** | ShineoriServer |
 | **Category** | Apps |
-| **Status** | Running |
-| **Exposed?** | LAN only, port `3070` bound to the laptop's LAN IP. Not on any tunnel. |
+| **Status** | ⏸️ on demand (started only when I need it) |
+| **Exposed?** | Only while running: LAN only, port `3070` bound to the laptop's LAN IP. Not on any tunnel. |
 | **Version** | `nxzai/explorer:v4.0.1` (pinned) |
 
 Compose file: [`stacks/nextexplorer/`](https://github.com/shineori/homelab/tree/main/stacks/nextexplorer)
@@ -43,6 +43,7 @@ flowchart LR
 - **LAN only.** A login page in front of this much data shouldn't be public. If I ever publish it, it goes behind my identity provider first.
 - **Picked folders, not my whole laptop home.** `~/.ssh` and other credential folders never enter the container, so a bug in the app can't reach them.
 - **Admin terminal off** (`TERMINAL_ENABLED=false`). I don't need a browser shell in a container that can see all of my files.
+- **Other apps' secrets are hidden.** MailFlow's folder is covered by a `tmpfs` mount, so its `.env` and TLS key can't be read from here.
 - **Read-only where edits could do damage.** Docker stack folders on the laptop can be viewed but not changed from here.
 - **Pinned image from the project's own namespace.** Its docs show a different registry in some examples, so I checked the release and tag publisher before picking `nxzai/explorer`.
 - **I read the entrypoint before starting it.** It only changes ownership on `/config` and `/cache`, so it won't rewrite permissions on my data.
@@ -65,6 +66,7 @@ Back up `config/` (accounts, shares, settings). `cache/` can be rebuilt.
 |---|---|---|
 | Port conflict on the default `3000` | Open WebUI already uses it | Published on `3070` instead |
 | `mount error(2): No such file or directory` for `data` | My media folder isn't an SMB share, so there's nothing to mount | The script skips it and keeps going. It needs a shared folder on the NAS first. |
+| MailFlow's secrets were readable again | I replaced this compose file with a copy missing the `tmpfs` line that hides them | Put the line back before starting the app again |
 
 ## What I'd harden next
 
