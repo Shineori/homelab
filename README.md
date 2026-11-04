@@ -91,7 +91,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Gmail Cleaner](docs/services/gmail-cleaner.md) | ShineoriServer | 🟢 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
 | [NextExplorer](docs/services/nextexplorer.md) | ShineoriServer | ⏸️ | Web file explorer across the laptop and the NAS (LAN only) |
 | [MailFlow](docs/services/mailflow.md) | ShineoriServer | 🟢 | Unified webmail for all my accounts, audited and hardened (LAN only) |
-| [Playnite](docs/services/playnite.md) | Windows PC | 🟡 | One game library for store launchers and emulators |
+| [Playnite](docs/services/playnite.md) | Windows PC | 🟢 | One game library for store launchers and emulators |
 
 ### Game servers
 
