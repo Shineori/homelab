@@ -29,7 +29,7 @@ services:
       - "8686:8686"  # Lidarr
 #     - "6767:6767"  # Bazarr
       - "9696:9696"  # Prowlarr
-      - "8191:8191"  # Flaresolverr
+      # - "8191:8191"  # Flaresolverr: LAN port removed. Prowlarr still reaches it inside this VPN network
       - "6969:6969"  # Whisparr
 #      - "8789:8789"  # Chaptarr
     restart: unless-stopped
