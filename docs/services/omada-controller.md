@@ -6,7 +6,7 @@
 |---|---|
 | **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
-| **Status** | ⏸️ on demand (started only when I need it) |
+| **Status** | 🟢 running full time |
 | **Exposed?** | LAN and Tailscale only, with a real HTTPS certificate on a private DNS name |
 | **Version** | 6.3.0.111 (`mbentley/omada-controller`, pinned) |
 
@@ -14,7 +14,7 @@ Compose file: [`stacks/omada-controller/`](https://github.com/shineori/homelab/t
 
 ## Why I run it
 
-My network gear is managed from an Omada controller. Instead of buying TP-Link's hardware controller, I run the software version in Docker and start it only when I need to change something. The access points keep working without it.
+My network gear is managed from an Omada controller. Instead of buying TP-Link's hardware controller, I run the software version in Docker. I used to start it only when I needed to change something, but it now stays on full time, because its daily backups only happen while it's running. The access points keep working without it.
 
 It used to live on the NAS. I moved it to ShineoriServer along with the other apps that don't need the NAS disks, since the NAS is short on RAM.
 
@@ -62,13 +62,13 @@ The full reasoning is in [Splitting my network into VLANs](../infrastructure/vla
 
 | Decision | Why |
 |---|---|
-| **LAN only, on demand** | A controller that can reconfigure the whole network shouldn't be reachable from outside, or running when nobody's using it |
+| **LAN and Tailscale only, always on** | A controller that can reconfigure the whole network shouldn't be reachable from the internet. It used to run only when I needed it, but with a trusted certificate, a local login and cloud access off, I'm comfortable leaving it on so the daily backups keep running |
 | **`network_mode: host`** | Device discovery uses broadcast traffic on the local network, which Docker's default bridge network blocks. It also means new ports like v6's 29817 work without any compose change. |
 | **`stop_grace_period: 60s`** | Gives the built-in MongoDB time to shut down cleanly, so the database isn't corrupted on stop |
 | **Pinned exact version** | `latest` on this image stays on v5 on purpose, so pinning is the only way to get v6, and upgrades happen on my schedule |
 | **Cloud access off** | I sign in locally and reach the controller over my own VPN when I'm away, so there's no need for a path through the vendor's cloud |
 | **Move Wi-Fi, not the servers** | Changing server addresses would have touched port bindings, shares, backups, tunnels, and the controller's own address. Moving Wi-Fi only needed new DHCP leases |
-| **Default-deny from Family to the servers, with two narrow exceptions** | Phones only need one plugin page and one sync service, so only those two ports are open. Everything else from Wi-Fi is blocked |
+| **Default-deny from Family to the servers, with narrow exceptions** | Phones only need one plugin page and one sync service, and one family PC needs file sharing on the NAS, so only those ports are open. Everything else from Family is blocked |
 | **Docker gets its own address pool** | Home networks should stay predictable, so Docker moved out of the way instead of the VLANs moving around it |
 | **Static management IP on the smart switch** | With DHCP on, the switch took an address from the Family VLAN after a restart. A fixed address on the management network keeps its admin page predictable |
 | **Separate guest and IoT VLANs** | Guests and smart devices get internet access but are blocked by firewall rules from starting connections to the home network, which limits what a compromised device can reach |

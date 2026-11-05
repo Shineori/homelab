@@ -63,7 +63,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 |---|---|---|---|
 | [Cloudflare Tunnel](services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
 | [Tailscale](services/tailscale.md) | ShiNAS, ShineoriServer | 🟢 | Private remote access to admin and personal apps, plus friend file sharing, nothing public |
-| [Omada Controller](services/omada-controller.md) | ShineoriServer | ⏸️ | Manages TP-Link Omada network gear |
+| [Omada Controller](services/omada-controller.md) | ShineoriServer | 🟢 | Manages TP-Link Omada network gear |
 | [Homepage](services/homepage.md) | ShineoriServer + ShiNAS agent | 🟢 | Command center dashboard: every service, live container status, both machines' stats |
 | [Homarr](services/homarr.md) | ShineoriServer | ⚫ | Dashboard / home screen for every service |
 | [Diun](services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |

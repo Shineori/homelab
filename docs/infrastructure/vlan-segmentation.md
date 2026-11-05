@@ -36,7 +36,7 @@ flowchart TD
 | Default | 1 | Servers, my main PC, network gear management | Everything |
 | IoT | 20 | Printer, camera system, smart devices | Internet only |
 | Guest | 30 | Visitors | Internet only |
-| Family | 40 | Phones, tablets, a family PC | Internet, IoT, and two allowed server ports |
+| Family | 40 | Phones, tablets, a family PC | Internet, IoT, and a few allowed server ports |
 
 ## What I changed
 
@@ -54,13 +54,15 @@ flowchart TD
 | Nov 5 | Set up VLANs on the PoE switch | So the camera system and family PC could leave the server network |
 | Nov 5 | Gave the PoE switch a static management address | With DHCP, it landed on the Family network after a restart |
 | Nov 5 | Added a single-address Tailscale route | The controller's real name and certificate now work away from home |
+| Nov 5 | Kept the controller running full time | Its daily backups only happen while it's running, and it's locked down enough now that I'm comfortable leaving it on |
+| Nov 5 | Allowed one family PC to reach file sharing on the NAS | It uses a shared network drive there. The rule covers only that PC's reserved address and one port |
 
 ## Security decisions
 
 | Decision | Why |
 |---|---|
 | **Move Wi-Fi, not the servers** | A scan found at least 15 services tied to server addresses, plus storage mounts, backups, tunnels and a port forward. Wi-Fi devices just pick up new addresses by themselves. |
-| **Default-deny from Family to my servers** | Phones only need two ports, so only those two are open |
+| **Default-deny from Family to my servers** | Phones only need two ports, and one family PC needs file sharing on the NAS, so only those are open |
 | **Change Docker, not the home network** | I wanted the home network to stay reliable and predictable, and a short container outage was fine |
 | **One Tailscale route, no full subnet router** | Only one server is advertised, so my devices still don't get a path to the whole LAN |
 | **No extra firewall hole for AirPrint** | I always print from my PC, so phone printer discovery wasn't worth opening IoT further |
@@ -97,6 +99,7 @@ The Docker move used [`docker-net-migrate.sh`](https://github.com/shineori/homel
 - [ ] Check whether the gateway's admin page can be reached from Family, and block it if so
 - [ ] Add a certificate-expiry alert, so a failed renewal gets noticed
 - [ ] Do a test restore of a controller backup
+- [ ] Limit the NAS share to the accounts that need it, since the firewall only controls who can connect
 
 ## What I learned
 
