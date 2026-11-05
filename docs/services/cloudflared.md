@@ -24,7 +24,7 @@ Opening ports on my home router would put every service, and my home IP address,
 ```mermaid
 flowchart LR
     v([Visitor]) --> edge[Cloudflare edge<br/>HTTPS + DDoS]
-    edge --> acc{Cloudflare Access<br/>Vaultwarden admin, Dawarich, addy.io}
+    edge --> acc{Cloudflare Access<br/>Vaultwarden admin, Dawarich, addy.io, Dozzle}
     acc -- passkey via Authentik --> tun
     edge --> tun[[Outbound tunnel]]
     tun --> cfd[cloudflared<br/>on ShiNAS]
@@ -53,6 +53,7 @@ Keeping them separate means each tunnel has its own token and its own routes, an
 | Immich | ShiNAS | App login, with optional Authentik SSO |
 | Dawarich | ShineoriServer | Cloudflare Access on the website, API key on `/api`, then app login with optional Authentik SSO |
 | Audiobookshelf | ShiNAS | App login. Stays public so I can share audiobooks with friends |
+| [Dozzle](dozzle.md) | ShineoriServer | Cloudflare Access and Authentik, then the Dozzle login (added 2026-11-05) |
 | Open WebUI | ShineoriServer | App login (usually spun down) |
 | [addy.io](addy.md) web UI (tunnel 2) | ShineoriServer | 🔐 **Cloudflare Access → Authentik passkey**, then the addy login (added 2026-10-30). Its `/api` path has a separate Bypass rule, because the browser extension and app use API tokens. |
 | *Any other hostname* | n/a | **Catch-all rule returns 404**, so nothing unlisted is reachable |

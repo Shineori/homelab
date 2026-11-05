@@ -1,5 +1,5 @@
 # Dozzle hub on ShineoriServer: live logs for this host plus ShiNAS (through its agent).
-# Port 8091 on all interfaces, so the LAN IP and Tailscale IP reach it. Not on Cloudflare.
+# Port 8091 on all interfaces, so the LAN IP and Tailscale IP reach it. Public route is behind Cloudflare Access.
 # data/ holds users and settings. certs/ holds the private agent pair. Never commit either.
 services:
   dozzle:

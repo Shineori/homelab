@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer (hub) + ShiNAS (agent) |
 | **Category** | Infrastructure |
 | **Status** | 🟢 running |
-| **Exposed?** | LAN and Tailscale only, web UI on port `8091`. The agent listens on port `7007`, bound to the NAS's LAN IP. Not on any tunnel. |
+| **Exposed?** | Through the tunnel behind Cloudflare Access and Authentik, plus LAN and Tailscale on port `8091`. The agent listens on port `7007`, bound to the NAS's LAN IP, and is never published. |
 | **Version** | Dozzle `v11.4.1`, pinned by tag on both servers |
 
 Compose files: [`stacks/dozzle/`](https://github.com/shineori/homelab/tree/main/stacks/dozzle) and [`stacks/dozzle-agent/`](https://github.com/shineori/homelab/tree/main/stacks/dozzle-agent)
@@ -24,6 +24,9 @@ It only shows live logs and doesn't store them, so it's a quick look rather than
 ```mermaid
 flowchart LR
     me([Me, on the LAN or Tailscale]) -- "login, port 8091" --> hub[Dozzle hub<br/>ShineoriServer]
+    away([Me, away from home]) --> access{Cloudflare Access<br/>Authentik, only me}
+    access --> tunnel[[Tunnel on ShiNAS]]
+    tunnel -- "login, port 8091" --> hub
     hub -- "Docker socket" --> d1[(ShineoriServer containers)]
     hub -- "TLS with my own certificate<br/>port 7007, LAN" --> agent[Dozzle agent<br/>ShiNAS]
     agent -- "Docker socket" --> d2[(ShiNAS containers)]
@@ -40,7 +43,8 @@ flowchart LR
 
 | Decision | Why |
 |---|---|
-| LAN and Tailscale only, not on Cloudflare | Logs can contain tokens and internal details, and I have no reason to read them from the public internet |
+| Cloudflare Access in front of the public address, using Authentik and only my email | Logs can contain tokens and internal details, so strangers should be stopped before any traffic reaches my network. I created the Access app before the route, so the address was never open |
+| Kept Dozzle's own login instead of its forward-proxy mode | In that mode Dozzle trusts a header saying who you are. With port `8091` still open on my LAN, anyone there could fake it, so I use Dozzle's password as a second lock |
 | Login required | Without one, anyone on my home network or tailnet could read every log |
 | Actions and shell disabled through environment variables | I want a log viewer, not a second way to control containers. Setting them as variables also locks the matching toggles in the UI |
 | My own agent certificate | Dozzle's built-in certificate is the same in every install, so it encrypts traffic but doesn't prove who is connecting. Anyone who reaches the agent port with it could read logs and run commands in containers |
@@ -68,6 +72,8 @@ I tested the certificate decision: a throwaway hub using the built-in certificat
    ```
    Then add `DOZZLE_AUTH_PROVIDER: simple` and recreate the container.
 
+6. To reach it away from home, create the Cloudflare Access app first (Authentik only, my email), then add the tunnel route to `http://<LAN_IP>:8091` and its DNS record.
+
 The hub and agent should stay on the same version, so I update them together.
 
 The hub's `data/` and `certs/` folders are in the nightly ShineoriServer backup. The agent only holds a copy of the certificate, so it doesn't need its own backup. Uptime Kuma watches the hub's `/healthcheck` page and the agent's port, and Homepage has a tile for it.
@@ -93,6 +99,7 @@ The hub's `data/` and `certs/` folders are in the nightly ShineoriServer backup.
 ## What I learned
 
 - A read-only Docker socket mount doesn't make the Docker API read-only. `:ro` only protects the socket file, and API calls still go through.
+- Publishing an app safely is partly about order: the lock goes on before the door exists.
 - Encryption and authentication are different jobs. The built-in certificate gave me the first but not the second, which is why generating my own mattered.
 - Read-only containers are a good way to discover what an app really writes, because every surprise shows up as a clear error.
 - `-t` on `docker run` merges stdout and stderr, which matters as soon as you redirect the output to a file.
