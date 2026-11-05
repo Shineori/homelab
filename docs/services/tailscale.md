@@ -60,7 +60,7 @@ flowchart LR
 | Decision | Why |
 |---|---|
 | **`tailscale serve`, never Funnel** | Serve stays inside my tailnet. Funnel would publish the app to the internet, which defeats the point |
-| **No subnet router** | Devices reach only the two servers' tailnet addresses, not my whole home network |
+| **One single-address route, no full subnet router** | ShineoriServer advertises only its own LAN address as a `/32`, so the Omada Controller's real name and certificate work away from home. My devices still don't get a path to the rest of my home network. My main PC doesn't accept routes, so it keeps its direct LAN path. |
 | **Test first, delete second** | I confirm the new address works on my phone and PC before removing the public route |
 | **Only what needs friends stays public** | Immich, Audiobookshelf and Vaultwarden stay on Cloudflare because I share them or may share them with people outside my tailnet |
 | Tailscale instead of an Access bypass | Remote access without weakening the Access policy on the admin panel |

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Moves Docker's auto-assigned networks off 192.168.x so they stop overlapping home VLANs.
-# Usage: bash docker-net-migrate.sh --dry-run      (no changes)
-#        sudo bash docker-net-migrate.sh --apply
+# Moves Docker's auto-assigned networks off a range that overlaps your home VLANs.
+# Usage: OLD_PREFIX=<start of the range to leave> NEW_POOL=<cidr> bash docker-net-migrate.sh --dry-run
+#        sudo OLD_PREFIX=<prefix> NEW_POOL=<cidr> bash docker-net-migrate.sh --apply
 set -uo pipefail
 MODE="${1:---dry-run}"
-BASE="$(hostname | grep -qi shinas && echo 10.202.0.0/16 || echo 10.201.0.0/16)"
+OLD_PREFIX="${OLD_PREFIX:?set OLD_PREFIX to the start of the range to leave}"
+BASE="${NEW_POOL:?set NEW_POOL to a free range, one per host}"
 HERE="$(cd "$(dirname "$0")" && pwd)"; STAMP="$(date +%Y%m%d-%H%M%S)"; CONF=/etc/docker/daemon.json
 say(){ printf '\n== %s ==\n' "$*"; }
 
@@ -13,7 +14,7 @@ mapfile -t RUNNING < <(docker ps --format '{{.Names}}')
 declare -A DIRS FILES SVCS ENVF; EMPTY=(); AFFECTED=()
 for n in $(docker network ls -q --filter driver=bridge); do
   sub=$(docker network inspect "$n" --format '{{range .IPAM.Config}}{{.Subnet}} {{end}}')
-  case "$sub" in 192.168.*) ;; *) continue;; esac
+  case "$sub" in "$OLD_PREFIX"*) ;; *) continue;; esac
   name=$(docker network inspect "$n" --format '{{.Name}}')
   mapfile -t cs < <(docker network inspect "$n" --format '{{range .Containers}}{{.Name}}{{"\n"}}{{end}}' | sed '/^$/d')
   AFFECTED+=("$name")
@@ -85,7 +86,7 @@ done
 say "Results"
 MISSING=0; for c in "${RUNNING[@]}"; do [ "$(docker inspect -f '{{.State.Running}}' "$c" 2>/dev/null)" = "true" ] || { echo "NOT RUNNING: $c"; MISSING=1; }; done
 echo "Running now: $(docker ps -q | wc -l), before: ${#RUNNING[@]}"
-echo "Docker routes still on 192.168.x:"; ip -4 route | grep -E '^192\.168\.' | grep -vE 'dev (eth|eno)' || echo "  none"
-for ip in 192.168.20.6 192.168.30.5 192.168.40.7; do echo "$ip -> $(ip route get "$ip" | head -1 | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')"; done
+echo "Docker routes still in that range:"; ip -4 route | grep -F "$OLD_PREFIX" | grep -E 'dev (br-|docker)' || echo "  none"
+for ip in ${CHECK_IPS:-}; do echo "$ip -> $(ip route get "$ip" | head -1 | awk '{for(i=1;i<=NF;i++) if($i=="dev") print $(i+1)}')"; done
 echo "Rollback files: $BK"
 [ "$FAIL$MISSING" = "00" ] && echo "DONE: all good." || echo "FINISHED WITH PROBLEMS: check the output above."

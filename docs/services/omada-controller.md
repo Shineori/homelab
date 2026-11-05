@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
 | **Status** | ⏸️ on demand (started only when I need it) |
-| **Exposed?** | LAN only, with a real HTTPS certificate on a private DNS name |
+| **Exposed?** | LAN and Tailscale only, with a real HTTPS certificate on a private DNS name |
 | **Version** | 6.3.0.111 (`mbentley/omada-controller`, pinned) |
 
 Compose file: [`stacks/omada-controller/`](https://github.com/shineori/homelab/tree/main/stacks/omada-controller)
@@ -55,6 +55,8 @@ flowchart TD
     ap --> w2[IoT Wi-Fi: VLAN 20]
     ap --> w3[Guest Wi-Fi: VLAN 30]
 ```
+
+The full reasoning is in [Splitting my network into VLANs](../infrastructure/vlan-segmentation.md).
 
 ## Security decisions
 
@@ -113,7 +115,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 | 2026-10-28 | The MongoDB 3.6 → 8 migration crashed at the 4.0 step with `WT_PANIC` and an invariant failure. It rolled itself back. | The real line in `mongodb_upgrade.log`: **`Too many open files`**. The repair step opens every collection and index file at once (about 6,500), and Docker's default limit is 1,024. Normal running never hit it because files are opened a few at a time. | Reran the migration with `--ulimit nofile=65536:65536`. Every step from 3.6 to 8.0 passed. Added the same limit to the compose file. |
 | 2026-10-28 | v6 showed a "Port Access Required" popup for TCP 29817 | v6 added a new port for devices. The notice appears for everyone after upgrading. | Nothing to do: host networking exposes it, and a test connection from another LAN machine succeeded |
 | 2026-11-05 | Smart switch admin page moved to the Family VLAN after a restart | The switch used DHCP and took an address from the Family network | Set a static management address, then rebooted with Save Config ticked |
-| 2026-11-05 | Phone on the new VLAN couldn't reach a server, even with a firewall exception | Docker's auto-assigned 192.168.x /20 networks overlapped the new VLANs, so servers sent replies into a Docker bridge | Set `default-address-pools` to a 10.x range on both servers and recreated the affected networks with [`docker-net-migrate.sh`](https://github.com/shineori/homelab/blob/main/scripts/docker-net-migrate.sh) |
+| 2026-11-05 | Phone on the new VLAN couldn't reach a server, even with a firewall exception | Docker's auto-assigned /20 networks overlapped the new VLANs, so servers sent replies into a Docker bridge | Set `default-address-pools` to a 10.x range on both servers and recreated the affected networks with [`docker-net-migrate.sh`](https://github.com/shineori/homelab/blob/main/scripts/docker-net-migrate.sh) |
 | 2026-11-02 | Browser refused the controller page with `ERR_CERT_AUTHORITY_INVALID` | The controller ships with a self-signed certificate for `localhost`, which nothing trusts | Issued a Let's Encrypt certificate over DNS-01 and loaded it through `/cert`. A test request now verifies the full chain. |
 
 ## What I'd harden next
@@ -126,7 +128,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - [ ] Finish moving smart devices to the IoT VLAN and test printing across VLANs
 - [x] Move Family Wi-Fi off the server network. *Done 2026-11-05*
 - [x] Finish the smart switch VLANs so the family wired PC and camera system leave the server network. *Done 2026-11-05*
-- [ ] Find out why phones can't discover the printer across VLANs
+- [x] Decide on phone printer discovery across VLANs. *Left off 2026-11-05, since I print from my PC*
 - [ ] Move the remaining smart devices to the IoT Wi-Fi
 - [ ] Add an Uptime Kuma certificate-expiry alert, so a failed renewal gets noticed before the certificate runs out
 - [ ] Remove the two unused named volumes declared at the bottom of the compose file (the stack uses folders instead)
@@ -144,7 +146,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - **A certificate proves a name, not an IP.** That's why the fix needed a DNS name first, even for a LAN-only app
 - **DNS-01 vs HTTP-01:** proving ownership through DNS means nothing has to be opened to the internet
 - **Certificate names are public.** Issued certificates go into public transparency logs, so a subdomain name isn't a secret even when the service is private
-- **Check routes before picking a subnet.** Docker can claim big blocks of 192.168.x, and running `ip route get <address>` on a server shows where its replies will actually go
+- **Check routes before picking a subnet.** Docker can claim big blocks of private address space, and running `ip route get <address>` on a server shows where its replies will actually go
 - **Firewall rules aren't the whole path.** A request can be allowed through and still fail because the reply goes the wrong way
 - **Moving the smaller thing is often the better design.** A list of everything tied to the server addresses changed the plan
 - **Applied isn't always saved.** This smart switch has a Save Config box on its reboot page, so test settings across a restart before trusting them

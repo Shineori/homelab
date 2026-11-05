@@ -4,7 +4,7 @@ set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "Run this with sudo."; exit 1; }
 
 DOMAIN=omada.example.com   # set to your own name
-LAN_IP=192.168.0.10       # set to the controller host
+LAN_IP=10.0.0.10          # set to the controller host
 HOME_DIR="$(getent passwd "${SUDO_USER:-root}" | cut -d: -f6)"
 OMADA_DIR="$HOME_DIR/docker/omada"
 BASE=/etc/omada-cert

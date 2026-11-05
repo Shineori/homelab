@@ -26,6 +26,7 @@ nav:
   - Infrastructure:
       - Hardware: infrastructure/hardware.md
       - Network: infrastructure/network.md
+      - "Splitting my network into VLANs": infrastructure/vlan-segmentation.md
       - Single sign-on: infrastructure/sso.md
       - Backups: infrastructure/backups.md
       - "Minecraft world backups": infrastructure/minecraft-backups.md
