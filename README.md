@@ -68,6 +68,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Homarr](docs/services/homarr.md) | ShineoriServer | ⚫ | Dashboard / home screen for every service |
 | [Diun](docs/services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |
 | [Uptime Kuma](docs/services/uptime-kuma.md) | ShineoriServer | 🟢 | Uptime monitoring and alerts for every service |
+| [Dozzle](docs/services/dozzle.md) | ShineoriServer + ShiNAS agent | 🟢 | Live container logs from both servers on one page, logs only (LAN and Tailscale) |
 
 ### Media
 

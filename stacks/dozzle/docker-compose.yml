@@ -1,0 +1,36 @@
+# Dozzle hub on ShineoriServer: live logs for this host plus ShiNAS (through its agent).
+# Port 8091 on all interfaces, so the LAN IP and Tailscale IP reach it. Not on Cloudflare.
+# data/ holds users and settings. certs/ holds the private agent pair. Never commit either.
+services:
+  dozzle:
+    image: amir20/dozzle:v11.4.1
+    container_name: dozzle
+    restart: unless-stopped
+    user: "1000:100"
+    group_add: ["1001"]   # group that owns /var/run/docker.sock on this host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: [/tmp]
+    mem_limit: 256m
+    environment:
+      DOZZLE_HOSTNAME: ShineoriServer
+      DOZZLE_REMOTE_AGENT: "<LAN_IP>:7007|ShiNAS"
+      DOZZLE_NO_ANALYTICS: "true"
+      DOZZLE_ENABLE_ACTIONS: "false"     # logs only, no start/stop/remove
+      DOZZLE_ENABLE_SHELL: "false"       # no shells into containers
+      DOZZLE_RELEASE_CHECK_MODE: manual  # Diun already watches for updates
+      DOZZLE_IMAGE_CHECK_MODE: "off"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+      - ./certs/dozzle_cert.pem:/dozzle_cert.pem:ro
+      - ./certs/dozzle_key.pem:/dozzle_key.pem:ro
+    ports:
+      - "8091:8080"
+    healthcheck:
+      test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

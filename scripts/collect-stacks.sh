@@ -28,13 +28,13 @@ MAP=(
   nas:arr-stack:arr-stack  nas:qbittorrent-mam:qbittorrent
   nas:audiobookshelf:AudioBookShelf  nas:flowcase:Flowcase
   nas:terraria:terraria  nas:resume-site:sites/resume-site  nas:diun:diun  nas:restic-server:restic-server
-  nas:homepage-agent:homepage-agent/shinas-agent
+  nas:homepage-agent:homepage-agent/shinas-agent  nas:dozzle-agent:dozzle-agent
   # ShineoriServer: RAM-hungry apps with small data (moved off the NAS)
   laptop:immich-ml:immich-ml  laptop:uptime-kuma:uptime-kuma
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
   laptop:minecraft:minecraft  laptop:ollama-stack:ollama-stack
   laptop:omada-controller:omada  laptop:paperless:paperless  laptop:addy:addy
-  laptop:gmail-cleaner:gmail-cleaner  laptop:nextexplorer:nextexplorer  laptop:mailflow:mailflow  laptop:homepage:homepage
+  laptop:gmail-cleaner:gmail-cleaner  laptop:nextexplorer:nextexplorer  laptop:mailflow:mailflow  laptop:homepage:homepage  laptop:dozzle:dozzle
 )
 
 # Extra (non-compose) files worth keeping, per repo folder. Paths are relative to the stack folder.

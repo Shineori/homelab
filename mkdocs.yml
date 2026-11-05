@@ -46,6 +46,7 @@ nav:
           - "Homarr": services/homarr.md
           - "Diun": services/diun.md
           - "Uptime Kuma": services/uptime-kuma.md
+          - "Dozzle": services/dozzle.md
       - Media:
           - "Jellyfin": services/jellyfin.md
           - "Immich": services/immich.md

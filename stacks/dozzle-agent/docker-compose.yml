@@ -1,0 +1,31 @@
+# Dozzle agent on ShiNAS: streams this host's container logs to the hub on ShineoriServer.
+# Bound to the LAN IP only. certs/ holds a private pair shared with the hub; never commit it.
+services:
+  dozzle-agent:
+    image: amir20/dozzle:v11.4.1
+    container_name: dozzle-agent
+    command: agent
+    restart: unless-stopped
+    user: "1000:100"
+    group_add: ["121"]   # group that owns /var/run/docker.sock on this host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:uid=1000,gid=100,mode=1770"]   # agent writes its address file here
+    mem_limit: 128m
+    environment:
+      DOZZLE_HOSTNAME: ShiNAS
+      DOZZLE_NO_ANALYTICS: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data   # agent saves notification config here
+      - ./certs/dozzle_cert.pem:/dozzle_cert.pem:ro
+      - ./certs/dozzle_key.pem:/dozzle_key.pem:ro
+    ports:
+      - "<LAN_IP>:7007:7007"
+    healthcheck:
+      test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
