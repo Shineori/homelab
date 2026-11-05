@@ -48,7 +48,8 @@ restic backup --host shineoriserver --tag apps \
   "$DOCKER/paperless" \
   "$DOCKER/addy" --exclude "$DOCKER/addy/db" --exclude "$DOCKER/addy/redis" \
   "$DOCKER/sites" \
-  "$DOCKER/dozzle"
+  "$DOCKER/dozzle" \
+  "$DOCKER/omada/omada-data/autobackup"
 restart_apps
 log "restarted: ${PAUSE[*]}"
 

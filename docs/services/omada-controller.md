@@ -99,7 +99,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - [x] Back up `./omada-data` (and export the controller's own backup) before any upgrade ✅ *Done for the v6 upgrade*
 - [x] Replace the self-signed web certificate with a trusted one that renews on its own. *Done 2026-11-02*
 - [x] Turn on the controller's auto backup (daily, keeps 7). *Done 2026-11-02*
-- [ ] Add those auto backup files to the nightly backup, so a copy lives off this machine
+- [x] Add those auto backup files to the nightly backup, so a copy lives off this machine. *Done 2026-11-05*
 - [x] Create guest and IoT VLANs with firewall rules between them. *Done 2026-11-02*
 - [ ] Finish moving smart devices to the IoT VLAN and test printing across VLANs
 - [ ] Give the servers their own VLAN
