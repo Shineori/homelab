@@ -68,6 +68,7 @@ flowchart TD
 | **Move Wi-Fi, not the servers** | Changing server addresses would have touched port bindings, shares, backups, tunnels, and the controller's own address. Moving Wi-Fi only needed new DHCP leases |
 | **Default-deny from Family to the servers, with two narrow exceptions** | Phones only need one plugin page and one sync service, so only those two ports are open. Everything else from Wi-Fi is blocked |
 | **Docker gets its own address pool** | Home networks should stay predictable, so Docker moved out of the way instead of the VLANs moving around it |
+| **Static management IP on the smart switch** | With DHCP on, the switch took an address from the Family VLAN after a restart. A fixed address on the management network keeps its admin page predictable |
 | **Separate guest and IoT VLANs** | Guests and smart devices get internet access but are blocked by firewall rules from starting connections to the home network, which limits what a compromised device can reach |
 | **Printer discovery with mDNS** | Devices on the home network can still find the printer after it moves to the IoT VLAN, without opening the whole VLAN back up |
 | **DNS-01 certificate** | Let's Encrypt can check domain ownership through a DNS record, so the controller gets a trusted certificate without being reachable from the internet |
@@ -111,6 +112,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 |---|---|---|---|
 | 2026-10-28 | The MongoDB 3.6 → 8 migration crashed at the 4.0 step with `WT_PANIC` and an invariant failure. It rolled itself back. | The real line in `mongodb_upgrade.log`: **`Too many open files`**. The repair step opens every collection and index file at once (about 6,500), and Docker's default limit is 1,024. Normal running never hit it because files are opened a few at a time. | Reran the migration with `--ulimit nofile=65536:65536`. Every step from 3.6 to 8.0 passed. Added the same limit to the compose file. |
 | 2026-10-28 | v6 showed a "Port Access Required" popup for TCP 29817 | v6 added a new port for devices. The notice appears for everyone after upgrading. | Nothing to do: host networking exposes it, and a test connection from another LAN machine succeeded |
+| 2026-11-05 | Smart switch admin page moved to the Family VLAN after a restart | The switch used DHCP and took an address from the Family network | Set a static management address, then rebooted with Save Config ticked |
 | 2026-11-05 | Phone on the new VLAN couldn't reach a server, even with a firewall exception | Docker's auto-assigned 192.168.x /20 networks overlapped the new VLANs, so servers sent replies into a Docker bridge | Set `default-address-pools` to a 10.x range on both servers and recreated the affected networks with [`docker-net-migrate.sh`](https://github.com/shineori/homelab/blob/main/scripts/docker-net-migrate.sh) |
 | 2026-11-02 | Browser refused the controller page with `ERR_CERT_AUTHORITY_INVALID` | The controller ships with a self-signed certificate for `localhost`, which nothing trusts | Issued a Let's Encrypt certificate over DNS-01 and loaded it through `/cert`. A test request now verifies the full chain. |
 
@@ -123,7 +125,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - [x] Create guest and IoT VLANs with firewall rules between them. *Done 2026-11-02*
 - [ ] Finish moving smart devices to the IoT VLAN and test printing across VLANs
 - [x] Move Family Wi-Fi off the server network. *Done 2026-11-05*
-- [ ] Finish the smart switch VLANs so the family wired PC and camera system leave the server network
+- [x] Finish the smart switch VLANs so the family wired PC and camera system leave the server network. *Done 2026-11-05*
 - [ ] Find out why phones can't discover the printer across VLANs
 - [ ] Move the remaining smart devices to the IoT Wi-Fi
 - [ ] Add an Uptime Kuma certificate-expiry alert, so a failed renewal gets noticed before the certificate runs out
@@ -145,6 +147,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - **Check routes before picking a subnet.** Docker can claim big blocks of 192.168.x, and running `ip route get <address>` on a server shows where its replies will actually go
 - **Firewall rules aren't the whole path.** A request can be allowed through and still fail because the reply goes the wrong way
 - **Moving the smaller thing is often the better design.** A list of everything tied to the server addresses changed the plan
+- **Applied isn't always saved.** This smart switch has a Save Config box on its reboot page, so test settings across a restart before trusting them
 - **Packet counters can map a network.** An uplink's traffic roughly equals every other port combined, which helped identify a switch's router link without touching a cable
 - **Unmanaged switches are invisible to the controller.** The topology view can show devices as directly attached when they aren't
 - **`latest` doesn't always mean newest.** This image keeps `latest` on v5 so a major upgrade can't happen by surprise
