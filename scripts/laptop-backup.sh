@@ -47,7 +47,8 @@ restic backup --host shineoriserver --tag apps \
   "$DOCKER/karakeep" "$VOL/karakeep_data/_data" \
   "$DOCKER/paperless" \
   "$DOCKER/addy" --exclude "$DOCKER/addy/db" --exclude "$DOCKER/addy/redis" \
-  "$DOCKER/sites"
+  "$DOCKER/sites" \
+  "$DOCKER/dozzle"
 restart_apps
 log "restarted: ${PAUSE[*]}"
 

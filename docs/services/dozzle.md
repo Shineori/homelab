@@ -23,7 +23,7 @@ It only shows live logs and doesn't store them, so it's a quick look rather than
 
 ```mermaid
 flowchart LR
-    me([Me, on the LAN or Tailscale]) -- "port 8091" --> hub[Dozzle hub<br/>ShineoriServer]
+    me([Me, on the LAN or Tailscale]) -- "login, port 8091" --> hub[Dozzle hub<br/>ShineoriServer]
     hub -- "Docker socket" --> d1[(ShineoriServer containers)]
     hub -- "TLS with my own certificate<br/>port 7007, LAN" --> agent[Dozzle agent<br/>ShiNAS]
     agent -- "Docker socket" --> d2[(ShiNAS containers)]
@@ -41,7 +41,7 @@ flowchart LR
 | Decision | Why |
 |---|---|
 | LAN and Tailscale only, not on Cloudflare | Logs can contain tokens and internal details, and I have no reason to read them from the public internet |
-| Adding a login (in progress) | Until it's on, anyone on my home network or tailnet can read every log |
+| Login required | Without one, anyone on my home network or tailnet could read every log |
 | Actions and shell disabled through environment variables | I want a log viewer, not a second way to control containers. Setting them as variables also locks the matching toggles in the UI |
 | My own agent certificate | Dozzle's built-in certificate is the same in every install, so it encrypts traffic but doesn't prove who is connecting. Anyone who reaches the agent port with it could read logs and run commands in containers |
 | Agent bound to the LAN IP | It doesn't need to listen on any other interface |
@@ -70,7 +70,7 @@ I tested the certificate decision: a throwaway hub using the built-in certificat
 
 The hub and agent should stay on the same version, so I update them together.
 
-Adding the hub's `data/` and `certs/` folders to the nightly ShineoriServer backup is still in progress. The agent only holds a copy of the certificate, so it doesn't need its own backup. Uptime Kuma watches the hub's `/healthcheck` page and the agent's port, and Homepage has a tile for it.
+The hub's `data/` and `certs/` folders are in the nightly ShineoriServer backup. The agent only holds a copy of the certificate, so it doesn't need its own backup. Uptime Kuma watches the hub's `/healthcheck` page and the agent's port, and Homepage has a tile for it.
 
 ## Troubleshooting log
 

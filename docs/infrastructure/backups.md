@@ -191,7 +191,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), addy.io (database dump + its folder: config, app key and DKIM key; added 2026-10-30), `~/docker/sites` (a small Node site and its JSON data file; added 2026-10-30), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
+| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), addy.io (database dump + its folder: config, app key and DKIM key; added 2026-10-30), `~/docker/sites` (a small Node site and its JSON data file; added 2026-10-30), Dozzle (login and agent certificate; added 2026-11-05), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
 | **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (it has [its own daily backup](minecraft-backups.md); I briefly added it here too, then took it back out the same day because one Minecraft backup process is plenty) |
 | **Schedule** | Laptop nightly at 04:15, after the NAS's own 03:30 run so they don't compete for the disk. NAS cleanup Sundays at 05:00. |
 | **Scripts** | [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh) on the laptop, [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) on the NAS |

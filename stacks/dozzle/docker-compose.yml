@@ -17,6 +17,7 @@ services:
       DOZZLE_HOSTNAME: ShineoriServer
       DOZZLE_REMOTE_AGENT: "<LAN_IP>:7007|ShiNAS"
       DOZZLE_NO_ANALYTICS: "true"
+      DOZZLE_AUTH_PROVIDER: simple
       DOZZLE_ENABLE_ACTIONS: "false"     # logs only, no start/stop/remove
       DOZZLE_ENABLE_SHELL: "false"       # no shells into containers
       DOZZLE_RELEASE_CHECK_MODE: manual  # Diun already watches for updates
