@@ -7,7 +7,7 @@
 | **Host** | ShiNAS |
 | **Category** | Media |
 | **Status** | 🟢 running |
-| **Exposed?** | Cloudflare Tunnel (no open ports), app login |
+| **Exposed?** | Tailscale and LAN only since 2026-11-04, app login. No public route |
 | **Version** | `12.1ubu2604-ls51` (LinuxServer.io image, pinned) |
 
 Compose file: [`stacks/jellyfin/`](https://github.com/shineori/homelab/tree/main/stacks/jellyfin)
@@ -20,9 +20,8 @@ I want my movies, shows and music in one library I can stream to any device, wit
 
 ```mermaid
 flowchart LR
-    tv([TV / phone / browser]) --> cf[Cloudflare edge]
-    cf --> tun[[Cloudflare Tunnel]]
-    tun --> jf[Jellyfin<br/>:8096]
+    tv([Phone / laptop away from home]) -- Tailscale --> ts[tailscale serve<br/>HTTPS]
+    ts --> jf[Jellyfin<br/>:8096]
     lan([Devices at home]) --> jf
     jf --> media[(Media library<br/>movies · tv · music)]
     jf --> gpu[/dev/dri<br/>hardware transcoding/]
@@ -41,8 +40,8 @@ flowchart LR
 
 | Decision | Why |
 |---|---|
-| **Published through the Cloudflare Tunnel** | Streaming from outside the house with no open router ports |
-| **Not behind Cloudflare Access** | TV and phone apps can't complete a browser login challenge, so Jellyfin's own login protects it |
+| **Tailscale instead of a public route** | I'm the only user, it needs no open router ports, and Cloudflare's terms restrict streaming video through a public hostname |
+| **Jellyfin's own login stays on** | Tailscale decides which devices can reach it, and the app still decides who can sign in |
 | **Runs as PUID 1000 / PGID 100** | The same non-root user that owns the media files, so it can read them without running as root |
 | **Pinned image** | Updates happen when I choose, after [Diun](diun.md) tells me about them |
 
@@ -52,7 +51,7 @@ flowchart LR
 2. Pass `/dev/dri` and add the `render` group ID (`group_add`) for hardware transcoding
 3. `docker compose up -d`, open `http://<LAN_IP>:8096`, create the admin account and add the libraries
 4. Turn on hardware acceleration under Dashboard → Playback → Transcoding
-5. Add a tunnel route to `http://<LAN_IP>:8096` for access away from home
+5. For access away from home, add a [Tailscale](tailscale.md) address: `tailscale serve --bg --https=8444 http://127.0.0.1:8096`, then point the apps at it
 6. The healthcheck has a 30-second `start_period`, so Jellyfin isn't marked unhealthy while it's still starting up
 
 ## Troubleshooting log
@@ -60,14 +59,16 @@ flowchart LR
 | Date | Problem | Root cause | Fix |
 |---|---|---|---|
 | — | The container kept restarting | Not written down at the time | Resolved. The current compose gives Jellyfin 30 seconds before health checks begin. |
+| 2026-11-04 | Moved from Cloudflare to Tailscale | Video through a public hostname is restricted by Cloudflare's terms, and only I use it | Added the Tailscale address, tested it on my phone and PC, then deleted the route and DNS record |
 
 ## What I'd harden next
 
 - [ ] Put an Uptime Kuma monitor's alert on it, since it's the app other people notice first when it's down
-- [ ] Decide whether the unused HTTPS port (`8920`) needs publishing at all, since Cloudflare already provides HTTPS
+- [ ] Decide whether the unused HTTPS port (`8920`) needs publishing at all, since `tailscale serve` already provides HTTPS
 
 ## What I learned
 
 - **Hardware transcoding in Docker:** a container only gets the GPU if you pass the device *and* the right group
 - **File ownership matters:** matching `PUID`/`PGID` to the media's owner avoids both permission errors and running as root
+- **Read the terms for what you're serving:** a tunnel that works fine technically can still be the wrong place for video
 - **Health checks need a grace period:** a slow-starting app can be killed by its own health check

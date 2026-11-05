@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | LAN only |
+| **Exposed?** | LAN and Tailscale only. No public route since 2026-11-04 |
 | **Port** | 3001 |
 
 Compose file: [`stacks/uptime-kuma/`](https://github.com/shineori/homelab/tree/main/stacks/uptime-kuma)
@@ -22,7 +22,7 @@ With services spread across two machines, I needed one place that tells me what'
 
 ```mermaid
 flowchart LR
-    me([Me, on the LAN]) --> kuma[Uptime Kuma<br/>ShineoriServer]
+    me([Me, on the LAN or Tailscale]) --> kuma[Uptime Kuma<br/>ShineoriServer]
     kuma -- HTTP checks --> nas[Apps on ShiNAS]
     kuma -- HTTP checks --> laptop[Apps on ShineoriServer]
     kuma -- ping --> host[ShiNAS itself]
@@ -40,8 +40,8 @@ flowchart LR
 
 | Decision | Why |
 |---|---|
-| **LAN only** | It isn't published through the tunnel. It shows the layout of my whole lab, which doesn't need to be on the internet. |
-| **Status pages are public by design** | Anyone who can reach the app can view a status page without logging in. That's fine on the LAN, but it's a reason to think before ever publishing it. |
+| **LAN and [Tailscale](tailscale.md) only** | It isn't published through the tunnel. It shows the layout of my whole lab, which doesn't need to be on the internet. |
+| **Status pages are public by design** | Anyone who can reach the app can view a status page without logging in. That's fine on the LAN and tailnet, but it's a reason to think before ever publishing it. |
 | **Runs on a different machine than most of what it watches** | So a NAS outage gets reported instead of taking the monitor down too |
 | **Image pinned to major version 2** | Updates within v2 only, no surprise major upgrade |
 
@@ -52,7 +52,8 @@ flowchart LR
 3. Add monitors using **LAN IPs**, not `localhost` or container names, so they keep working no matter which machine Uptime Kuma runs on
 4. Pause monitors for on-demand services (Flowcase, Ghiro) so only real outages show red
 5. Optionally create a status page, for a dashboard widget or a quick read-only view
-6. **Moving it:** stop the container first, then copy the folder. Stopping merges SQLite's write-ahead log (`kuma.db-wal`) into `kuma.db`, so the copy isn't half-saved.
+6. For access away from home: `tailscale serve --bg --https=8443 http://127.0.0.1:3001`
+7. **Moving it:** stop the container first, then copy the folder. Stopping merges SQLite's write-ahead log (`kuma.db-wal`) into `kuma.db`, so the copy isn't half-saved.
 
 ## Troubleshooting log
 
@@ -62,6 +63,7 @@ flowchart LR
 | 2026-10-11 | 12 monitors red at once, burying anything real | Services I'd stopped on purpose (on-demand apps, things paused during the overload) still had active monitors | Paused monitors for services that are meant to be off |
 | 2026-10-11 | Couldn't log in after the move | I'd forgotten the admin password | Reset it inside the container with `npm run reset-password`. Monitors and history are untouched. It's in my password manager now. |
 | 2026-10-11 | Homarr's Uptime Kuma widget returned **404** | Homarr reads a *status page*, and with no slug set it asks for one called `default`, which didn't exist | Created a status page and gave Homarr its slug |
+| 2026-11-04 | An audit found a public tunnel route, even though this page said LAN only | The route had been added without the docs being updated | Added a Tailscale address, tested it on my phone and PC, confirmed nothing depended on the public address, then deleted the route and DNS record |
 
 ## What I'd harden next
 
@@ -74,4 +76,5 @@ flowchart LR
 - **Monitoring belongs outside what it monitors.** When the NAS overloaded, the monitor running on it went down too instead of warning me.
 - **Alert fatigue is real.** A dashboard with 12 expected reds hides the one unexpected red, so "intentionally off" needs to look different from "broken".
 - **Design for moving:** monitors that use LAN addresses survived the move to a new machine without a single edit
+- **Docs can be wrong about exposure:** only the live tunnel config can tell me what's really public
 - **SQLite's write-ahead log:** recent changes can live in a separate `-wal` file, so you stop the app before copying its database

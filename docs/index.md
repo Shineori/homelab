@@ -29,7 +29,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 
 | Write-up | Highlights |
 |---|---|
-| 🌐 [Cloudflare Tunnel](services/cloudflared.md) | Zero open ports, a **security audit of my own setup** (5 findings, all fixed), Zero Trust gate on the NAS admin panel |
+| 🌐 [Cloudflare Tunnel](services/cloudflared.md) | Zero open ports, a **security audit of my own setup** (5 findings, all fixed), Zero Trust gates on sensitive web apps |
 | 🔐 [Authentik SSO](services/authentik.md) | Self-hosted identity provider, passwordless passkeys, OIDC into my apps |
 | 🛡️ [auditd + Discord alerts](services/security-monitoring.md) | Kernel-level audit rules mapped to attacker goals, real-time alerting through an auditd plugin I wrote |
 | 🔑 [Vaultwarden](services/vaultwarden.md) | Self-hosted password manager with a zero-knowledge design; found and closed open public sign-ups, now invite-only |
@@ -62,7 +62,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Cloudflare Tunnel](services/cloudflared.md) | ShiNAS | 🟢 | Publishes selected services to the internet with no open ports |
-| [Tailscale](services/tailscale.md) | ShiNAS | 🟢 | Private remote access to the NAS and friend file sharing, nothing public |
+| [Tailscale](services/tailscale.md) | ShiNAS, ShineoriServer | 🟢 | Private remote access to admin and personal apps, plus friend file sharing, nothing public |
 | [Omada Controller](services/omada-controller.md) | ShineoriServer | ⏸️ | Manages TP-Link Omada network gear |
 | [Homepage](services/homepage.md) | ShineoriServer + ShiNAS agent | 🟢 | Command center dashboard: every service, live container status, both machines' stats |
 | [Homarr](services/homarr.md) | ShineoriServer | ⚫ | Dashboard / home screen for every service |
@@ -88,7 +88,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Ghiro](services/ghiro.md) | ShineoriServer | ⏸️ | Image forensics web app |
 | [Paperless-ngx](services/paperless.md) | ShineoriServer | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
-| [Gmail Cleaner](services/gmail-cleaner.md) | ShineoriServer | 🟢 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
+| [Gmail Cleaner](services/gmail-cleaner.md) | ShineoriServer | 🟡 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
 | [NextExplorer](services/nextexplorer.md) | ShineoriServer | ⏸️ | Web file explorer across the laptop and the NAS (LAN only) |
 | [MailFlow](services/mailflow.md) | ShineoriServer | 🟢 | Unified webmail for all my accounts, audited and hardened (LAN only) |
 | [Playnite](services/playnite.md) | Windows PC | 🟢 | One game library for store launchers and emulators |

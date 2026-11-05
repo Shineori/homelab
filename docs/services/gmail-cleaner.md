@@ -6,8 +6,8 @@
 |---|---|
 | **Host** | ShineoriServer |
 | **Category** | Apps |
-| **Status** | 🟢 running |
-| **Exposed?** | Web UI only through the Cloudflare Tunnel, behind **Cloudflare Access + Authentik**. The app also checks the Access login token itself, so going straight to the LAN port gets a `403`. The OAuth callback port is not published. |
+| **Status** | 🟡 not running. The container is gone, but its folder is still on the server |
+| **Exposed?** | Not published. I removed its tunnel route and DNS record on 2026-11-04 because nothing was listening. If I bring it back, it needs a new route and its Access app recreated |
 | **Version** | My fork, pinned to commit `b3e662f` (built from source, no prebuilt image) |
 
 Compose file: [`stacks/gmail-cleaner/`](https://github.com/shineori/homelab/tree/main/stacks/gmail-cleaner)

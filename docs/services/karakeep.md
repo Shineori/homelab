@@ -7,7 +7,7 @@
 | **Host** | ShineoriServer |
 | **Category** | Apps |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | Cloudflare Tunnel (no open ports) |
+| **Exposed?** | Tailscale and LAN only since 2026-11-04. No public route |
 | **Port** | 3010 |
 
 Compose file: [`stacks/karakeep/`](https://github.com/shineori/homelab/tree/main/stacks/karakeep)
@@ -22,9 +22,8 @@ I save a lot of links and used to lose them across browser bookmarks and open ta
 
 ```mermaid
 flowchart LR
-    me([Browser / phone]) --> cf[Cloudflare edge]
-    cf --> tun[[Tunnel<br/>cloudflared on ShiNAS]]
-    tun -- LAN --> web[Karakeep web<br/>:3010]
+    me([Browser / phone]) -- Tailscale --> ts[tailscale serve<br/>HTTPS]
+    ts --> web[Karakeep web<br/>:3010]
     web --> chrome[Headless Chrome<br/>fetches + snapshots pages]
     web --> meili[(Meilisearch<br/>full-text search)]
     web --> data[(data volume<br/>bookmarks + assets)]
@@ -44,10 +43,10 @@ flowchart LR
 
 | Decision | Why |
 |---|---|
-| **Published through the Cloudflare Tunnel** | Save links from my phone anywhere, with no open router ports |
+| **[Tailscale](tailscale.md) instead of a public route** | I can save links from my phone anywhere, and it has no public address since I'm the only user |
 | **Local AI only** | Tagging and summaries run on my own Ollama, so the pages I save never leave my lab |
 | **Secrets in a git-ignored `.env`** | `NEXTAUTH_SECRET` and `MEILI_MASTER_KEY`. The repo only has a blanked `.env.example`. |
-| **`NEXTAUTH_URL` = the public hostname** | The login system builds its links and redirects from this address |
+| **`NEXTAUTH_URL` = the Tailscale HTTPS address** | The login system builds its links and redirects from this address |
 | **Pinned versions** | The app at `0.34.0`, Meilisearch `v1.41.0` (the version Karakeep recommends), and `karakeep-chrome` by digest |
 
 ## Setup notes
@@ -55,7 +54,7 @@ flowchart LR
 1. Fill `.env`: `NEXTAUTH_SECRET`, `MEILI_MASTER_KEY`, `NEXTAUTH_URL` (the address I actually open it at), and the Ollama settings (`OLLAMA_BASE_URL`, text, image and embedding models)
 2. Declare the named volumes (`data`, `meilisearch`) at the bottom of the compose file
 3. `docker compose up -d`, then create the account
-4. Tunnel route: public hostname → `http://<LAN_IP>:3010`
+4. Add a [Tailscale](tailscale.md) address: `tailscale serve --bg --https=8444 http://127.0.0.1:3010`, and use it for `NEXTAUTH_URL`, the phone app and the browser extension
 
 ## Troubleshooting log
 
@@ -68,6 +67,7 @@ flowchart LR
 | 2026-10-11 | `NEXTAUTH_URL` was `http://localhost:3000` | A wrong value from the original setup, found during the move | Set it to the public hostname |
 | 2026-10-13 | Diun announced Meilisearch `v1.55.0`, but I was on `v1.13.3` | Meilisearch's data files are tied to its version, so a big jump can refuse to open the old index. And the newest release isn't necessarily one Karakeep supports. | Checked Karakeep's docs: they recommend **`v1.41.0`**. Followed their procedure: stopped Meilisearch, set the old `data.ms` aside, started `v1.41.0` empty, then ran **Admin → Background Jobs → Reindex All Bookmarks**. All bookmarks were re-indexed with no errors. |
 | 2026-10-21 | Upgrading 0.33.2 to 0.34.0, but the app was pinned by digest, so I couldn't tell which version I was on | A digest hides the version number | Compared my digest against the registry's digest for each release tag: it matched `0.33.2`. Read the upgrade notes: everyone gets signed out once (new session system), emails get lowercased, and Karakeep asks everyone to move to its own `karakeep-chrome` image. Backed up the stopped stack and volumes, switched the pin to `0.34.0`, swapped Chrome to `karakeep-chrome` with their recommended flags, then confirmed `/api/health` answered OK. Meilisearch stayed on `v1.41.0`, still what Karakeep's own compose file uses. |
+| 2026-11-04 | Moved from Cloudflare to Tailscale | Only I use it, so it didn't need a public address | Added the Tailscale address, changed `NEXTAUTH_URL` to match and recreated the stack, tested it on my phone and PC, then deleted the route and DNS record |
 
 ## What I'd harden next
 
@@ -84,4 +84,5 @@ flowchart LR
 - **Version numbers beat digests for reading:** a digest is perfect for safety but tells you nothing at a glance, so I now pin a real version tag where the app publishes one
 - **Rebuildable vs irreplaceable data:** the search index can be thrown away and rebuilt from the bookmarks, which made a risky upgrade simple
 - **Ports are a shared resource:** two apps on one machine can't both publish the same port, but the container can keep its internal port (`3010:3000`)
+- **Moving an app means moving its address settings:** login systems like NextAuth store their own URL, so a new address has to be set in the app too
 - **Keep AI local when the data is personal:** what I read says a lot about me, so the tagging runs on my own GPU

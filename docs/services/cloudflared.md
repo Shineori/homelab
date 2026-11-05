@@ -1,6 +1,6 @@
 # Cloudflare Tunnel
 
-> The lab's front door: publishes web apps to the internet with zero open ports, with a Zero Trust gate in front of the admin panel
+> The lab's front door: publishes web apps to the internet with zero open ports, with Zero Trust gates in front of sensitive web apps
 
 | | |
 |---|---|
@@ -24,12 +24,12 @@ Opening ports on my home router would put every service, and my home IP address,
 ```mermaid
 flowchart LR
     v([Visitor]) --> edge[Cloudflare edge<br/>HTTPS + DDoS]
-    edge --> acc{Cloudflare Access<br/>NAS panel + addy.io}
+    edge --> acc{Cloudflare Access<br/>Vaultwarden admin, Dawarich, addy.io}
     acc -- passkey via Authentik --> tun
     edge --> tun[[Outbound tunnel]]
     tun --> cfd[cloudflared<br/>on ShiNAS]
     cfd --> apps[Web apps on ShiNAS]
-    cfd --> ai[Open WebUI, Dawarich, Karakeep<br/>on ShineoriServer]
+    cfd --> ai[Open WebUI, Dawarich<br/>on ShineoriServer]
     edge -. unknown hostname .-> x[404 catch-all]
 ```
 
@@ -48,13 +48,11 @@ Keeping them separate means each tunnel has its own token and its own routes, an
 
 | App | Runs on | Protection in front of the app |
 |---|---|---|
-| NAS admin panel | ShiNAS | 🔐 **Cloudflare Access → Authentik passkey**, then the NAS login |
 | Authentik (the SSO itself) | ShiNAS | Passkey login (deliberately *not* behind Access, or logins would loop) |
-| Vaultwarden | ShiNAS | App login (its clients need direct API access) |
+| Vaultwarden | ShiNAS | App login (its clients need direct API access). Its `/admin` path sits behind Cloudflare Access and Authentik |
 | Immich | ShiNAS | App login, with optional Authentik SSO |
 | Dawarich | ShineoriServer | Cloudflare Access on the website, API key on `/api`, then app login with optional Authentik SSO |
-| Jellyfin, Audiobookshelf | ShiNAS | App login |
-| Karakeep | ShineoriServer | App login |
+| Audiobookshelf | ShiNAS | App login. Stays public so I can share audiobooks with friends |
 | Open WebUI | ShineoriServer | App login (usually spun down) |
 | [addy.io](addy.md) web UI (tunnel 2) | ShineoriServer | 🔐 **Cloudflare Access → Authentik passkey**, then the addy login (added 2026-10-30). Its `/api` path has a separate Bypass rule, because the browser extension and app use API tokens. |
 | *Any other hostname* | n/a | **Catch-all rule returns 404**, so nothing unlisted is reachable |
@@ -65,6 +63,7 @@ Keeping them separate means each tunnel has its own token and its own routes, an
 |---|---|---|
 | Web apps | **Cloudflare Tunnel** | Web traffic is what tunnel routes are built for |
 | Game servers (Minecraft) | **playit.gg** | Games speak raw TCP/UDP, which tunnel web routes can't carry |
+| Private admin and personal apps | **[Tailscale](tailscale.md)** | The NAS panel, SearXNG, Uptime Kuma, Karakeep and Jellyfin only serve me, so they don't need a public address |
 | Flowcase | **LAN only** | Doesn't need to be on the internet, so it isn't |
 | The Forest server | **Tailscale** | Private, friends-only VPN |
 
@@ -80,6 +79,23 @@ When I documented this tunnel, I reviewed every route and DNS record instead of 
 | 🟡 Low | **A route for game traffic that could never work.** | Clutter that hides what's really exposed. | Deleted. | ✅ Fixed |
 | 🟡 Low | **A forgotten dynamic-DNS container** on the Minecraft server, configured to publish my home IP on another hostname | It had been failing silently for a long time (Cloudflare rejected its API token), but if anyone ever fixed the token, it would start leaking my IP again | Suspected it of re-creating the deleted record, but checking its config and logs proved it wasn't the cause. Removed it anyway, along with its credential. | ✅ Fixed |
 
+### Second audit: 2026-11-04
+
+I went through every published route again and asked one question for each: who outside my own devices actually needs this? Anything that only serves me moved to [Tailscale](tailscale.md).
+
+| Severity | Finding | Risk | Fix | Status |
+|---|---|---|---|---|
+| 🔴 High | **SearXNG was published with no login.** My docs said it was LAN only. | Anyone could use my search instance through my VPN exit | Moved to Tailscale, then deleted the route and DNS record | ✅ Fixed |
+| 🟠 Medium | **Vaultwarden's `/admin` login page was public** | A login page for server-wide settings, reachable by anyone | Cloudflare Access on just that path, so the Bitwarden apps keep syncing | ✅ Fixed |
+| 🟠 Medium | **The NAS panel still had a public route**, even behind Access | A public path to the most sensitive thing in the lab, for something I can reach privately | Moved to Tailscale, then deleted the route and DNS record | ✅ Fixed |
+| 🟠 Medium | **Dawarich's login page was public** | A public login in front of my full location history | Access on the website, with a bypass for `/api` so the phone tracker still works with its API key | ✅ Fixed |
+| 🟡 Low | **Jellyfin streamed video through a public hostname** | Cloudflare's terms restrict serving video this way on its regular plans | Moved to Tailscale | ✅ Fixed |
+| 🟡 Low | **Uptime Kuma had a public route.** My docs said it was LAN only. | Its dashboard maps out my whole lab | Moved to Tailscale, then deleted the route and DNS record | ✅ Fixed |
+| 🟡 Low | **A route pointed at Gmail Cleaner, whose container was gone** | Harmless until something else used that port | Deleted the route and DNS record | ✅ Fixed |
+| 🟡 Low | **TLS 1.1 still connected on my main domain** | Old, weak connections stayed possible | Set Minimum TLS to 1.2 | ✅ Fixed |
+
+For each move, I tested the new address on my phone and PC first, and only then deleted the public route.
+
 ### How the Access gate works
 
 ```mermaid
@@ -87,13 +103,13 @@ sequenceDiagram
     participant V as Visitor
     participant CF as Cloudflare Access
     participant AK as Authentik
-    participant NAS as NAS panel
-    V->>CF: request NAS panel
+    participant APP as Protected app
+    V->>CF: request protected app
     CF-->>V: 302: log in first (no session)
     V->>AK: OIDC login with passkey
     AK-->>CF: signed token (email)
     CF->>CF: policy: email = me AND login method = Authentik
-    CF->>NAS: allowed, forward through tunnel
+    CF->>APP: allowed, forward through tunnel
 ```
 
 Design choices:
@@ -103,9 +119,9 @@ Design choices:
 - **Least privilege in Authentik:** the OIDC app only allows the *authorization code* and *refresh token* grants. The *password* grant is off, so nothing can trade a password for a token and skip my passkey.
 - **Bound to one user:** only my account is bound to the Cloudflare Access application in Authentik.
 - **Fail closed:** if the binding check errors, access is denied.
-- **Lockout plan:** if Authentik or the tunnel is down, I can still reach the panel on my home network.
+- **Lockout plan:** if Authentik or the tunnel is down, I can still reach those apps on my home network.
 
-Verified from outside with no cookies: a request to the NAS panel gets a `302` redirect to the Cloudflare Access login, with `auth_status: NONE`.
+Verified from outside with no cookies: a request to a protected path gets a `302` redirect to the Cloudflare Access login, with `auth_status: NONE`.
 
 ## Setup notes
 
@@ -130,8 +146,8 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 - [x] **Moved the tunnel token out of the world-readable systemd unit file** ✅ *Done.* The installer had put it on the `ExecStart` line, where any local user could read it and it showed up in `ps`. It now lives in a root-only `EnvironmentFile` (`chmod 600`). I verified all 4 tunnel connections re-registered and every app still answered. It's the same secrets-in-arguments pattern I found in my [auditd alert script](security-monitoring.md).
 - [x] **Narrowed the resume site's port binding** ✅ *Done.* Docker publishes ports on every interface by default (and its iptables rules skip host firewalls). The port is now bound to the NAS's LAN IP only, with the tunnel route pointing at that address. Devices on my home network can still reach it directly. Details and the trade-offs in the [resume site docs](resume-site.md).
 - [ ] Do the same for other apps whose only client is `cloudflared`. Routes that point at the LAN IP (not `localhost`) have to be switched first, or they'll break.
-- [ ] Protect Vaultwarden's `/admin` page with an Access policy scoped to that path (the main vault has to stay open for its apps).
-- [ ] Turn on Cloudflare Access for other admin-style apps where clients don't need direct API access. *Progress:* addy.io's web UI got it on 2026-10-30, with a path-based Bypass for its token-protected API, which is a pattern I can reuse for other apps that have both a browser UI and an API.
+- [x] **Protected Vaultwarden's `/admin` page** with an Access policy scoped to that path ✅ *Done 2026-11-04.* The main vault stays open for its apps.
+- [ ] Turn on Cloudflare Access for other admin-style apps where clients don't need direct API access. *Progress:* addy.io's web UI got it on 2026-10-30 and Dawarich's website on 2026-11-04, both with a path-based Bypass for its token-protected API, which is a pattern I can reuse for other apps that have both a browser UI and an API.
 - [ ] Re-audit routes and DNS records regularly. Today's findings were all **drift**: leftovers from setups that changed.
 
 ## What I learned
@@ -141,4 +157,6 @@ Verified from outside with no cookies: a request to the NAS panel gets a `302` r
 - **Configuration drift is a real attack surface.** None of the findings came from one big mistake. Old setups left things behind, and only an actual audit found them.
 - **DNS reveals more than you think.** One leftover record exposed what the whole tunnel was built to hide.
 - **Verify, don't assume.** Checking the authoritative nameservers (not a cache) told me whether the fix had really worked. Reading the DDNS container's logs proved my first theory wrong. Broken services can still be liabilities, so I removed it regardless.
+- **Docs drift too.** Two apps my docs called LAN only had public routes. The live config is the source of truth, so audits have to read it directly.
+- **A public address should have a reason.** If only my own devices use an app, it doesn't need one.
 - **Matching tools to protocols:** HTTP through the tunnel, raw game traffic through playit.gg, private access over Tailscale or the LAN

@@ -7,7 +7,7 @@
 | **Host** | ShiNAS |
 | **Category** | Security & identity |
 | **Status** | 🟢 running |
-| **Exposed?** | Cloudflare Tunnel (no open ports) |
+| **Exposed?** | Cloudflare Tunnel (no open ports). `/admin` sits behind Cloudflare Access and Authentik |
 | **Version** | 1.37.3 (pinned) |
 
 Compose file: [`stacks/vaultwarden/`](https://github.com/shineori/homelab/tree/main/stacks/vaultwarden)
@@ -46,9 +46,9 @@ Encryption and decryption happen **on my devices**. Vaultwarden only ever stores
 | Decision | Why |
 |---|---|
 | **Invite-only registration** | Public sign-ups are off. Friends join through an invite to my Bitwarden organization, which also lets us share logins like the Wi-Fi password. Strangers who find the URL can't create accounts (see the troubleshooting log). |
-| **Admin panel disabled** | No `ADMIN_TOKEN` is set, so `/admin` shows a "disabled" page and there's no admin login to brute-force |
+| **Admin panel behind Cloudflare Access** | `/admin` is on, with a hashed `ADMIN_TOKEN`. Since 2026-11-04, Access and Authentik check me before that page can even load |
 | **Published through Cloudflare Tunnel** | No open router ports, home IP hidden, HTTPS at the edge |
-| **Not behind Cloudflare Access** | The Bitwarden apps talk to the API directly and can't complete a browser login challenge. The vault's own encryption and master password are the protection here. |
+| **Main vault not behind Cloudflare Access** | The Bitwarden apps talk to the API directly and can't complete a browser login challenge. The vault's own encryption and master password are the protection here. |
 | **Email through a dedicated homelab mailbox** | Invites, new-device login alerts and 2FA-by-email go out from a homelab-only Gmail account, never my personal email. It uses STARTTLS on port 587. |
 | **A separate app password per service** | Vaultwarden has its own Gmail app password, not shared with Authentik, so if one leaks I can revoke it without breaking anything else |
 | **SMTP secrets in a root-only `.env`** | Credentials live in `.env` (`chmod 600`, root-owned), loaded with `env_file`. The compose file holds no secrets, and the repo has a blanked `.env.example`. |
