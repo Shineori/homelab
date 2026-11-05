@@ -40,6 +40,22 @@ flowchart LR
     folder -- "read at startup,<br/>restarts only if changed" --> ctl[Omada Controller]
 ```
 
+The home network is split into VLANs. Servers and my main PC stay on the original network, so none of their addresses had to change:
+
+```mermaid
+flowchart TD
+    router[Gateway] --> room[Unmanaged switch]
+    router --> pc[Main PC]
+    router --> poe[PoE smart switch]
+    room --> servers[Servers]
+    poe --> ap[Access point]
+    poe --> family[Family wired PC]
+    poe --> cam[Camera system]
+    ap --> w1[Family Wi-Fi: VLAN 40]
+    ap --> w2[IoT Wi-Fi: VLAN 20]
+    ap --> w3[Guest Wi-Fi: VLAN 30]
+```
+
 ## Security decisions
 
 | Decision | Why |
@@ -49,6 +65,9 @@ flowchart LR
 | **`stop_grace_period: 60s`** | Gives the built-in MongoDB time to shut down cleanly, so the database isn't corrupted on stop |
 | **Pinned exact version** | `latest` on this image stays on v5 on purpose, so pinning is the only way to get v6, and upgrades happen on my schedule |
 | **Cloud access off** | I sign in locally and reach the controller over my own VPN when I'm away, so there's no need for a path through the vendor's cloud |
+| **Move Wi-Fi, not the servers** | Changing server addresses would have touched port bindings, shares, backups, tunnels, and the controller's own address. Moving Wi-Fi only needed new DHCP leases |
+| **Default-deny from Family to the servers, with two narrow exceptions** | Phones only need one plugin page and one sync service, so only those two ports are open. Everything else from Wi-Fi is blocked |
+| **Docker gets its own address pool** | Home networks should stay predictable, so Docker moved out of the way instead of the VLANs moving around it |
 | **Separate guest and IoT VLANs** | Guests and smart devices get internet access but are blocked by firewall rules from starting connections to the home network, which limits what a compromised device can reach |
 | **Printer discovery with mDNS** | Devices on the home network can still find the printer after it moves to the IoT VLAN, without opening the whole VLAN back up |
 | **DNS-01 certificate** | Let's Encrypt can check domain ownership through a DNS record, so the controller gets a trusted certificate without being reachable from the internet |
@@ -92,6 +111,7 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 |---|---|---|---|
 | 2026-10-28 | The MongoDB 3.6 → 8 migration crashed at the 4.0 step with `WT_PANIC` and an invariant failure. It rolled itself back. | The real line in `mongodb_upgrade.log`: **`Too many open files`**. The repair step opens every collection and index file at once (about 6,500), and Docker's default limit is 1,024. Normal running never hit it because files are opened a few at a time. | Reran the migration with `--ulimit nofile=65536:65536`. Every step from 3.6 to 8.0 passed. Added the same limit to the compose file. |
 | 2026-10-28 | v6 showed a "Port Access Required" popup for TCP 29817 | v6 added a new port for devices. The notice appears for everyone after upgrading. | Nothing to do: host networking exposes it, and a test connection from another LAN machine succeeded |
+| 2026-11-05 | Phone on the new VLAN couldn't reach a server, even with a firewall exception | Docker's auto-assigned 192.168.x /20 networks overlapped the new VLANs, so servers sent replies into a Docker bridge | Set `default-address-pools` to a 10.x range on both servers and recreated the affected networks with [`docker-net-migrate.sh`](https://github.com/shineori/homelab/blob/main/scripts/docker-net-migrate.sh) |
 | 2026-11-02 | Browser refused the controller page with `ERR_CERT_AUTHORITY_INVALID` | The controller ships with a self-signed certificate for `localhost`, which nothing trusts | Issued a Let's Encrypt certificate over DNS-01 and loaded it through `/cert`. A test request now verifies the full chain. |
 
 ## What I'd harden next
@@ -102,7 +122,10 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - [x] Add those auto backup files to the nightly backup, so a copy lives off this machine. *Done 2026-11-05*
 - [x] Create guest and IoT VLANs with firewall rules between them. *Done 2026-11-02*
 - [ ] Finish moving smart devices to the IoT VLAN and test printing across VLANs
-- [ ] Give the servers their own VLAN
+- [x] Move Family Wi-Fi off the server network. *Done 2026-11-05*
+- [ ] Finish the smart switch VLANs so the family wired PC and camera system leave the server network
+- [ ] Find out why phones can't discover the printer across VLANs
+- [ ] Move the remaining smart devices to the IoT Wi-Fi
 - [ ] Add an Uptime Kuma certificate-expiry alert, so a failed renewal gets noticed before the certificate runs out
 - [ ] Remove the two unused named volumes declared at the bottom of the compose file (the stack uses folders instead)
 - [ ] Delete the old copy of the stack left on the NAS so the v5 controller can't be started there by accident
@@ -119,6 +142,9 @@ TP-Link's own Linux download (a `.tar.gz` installer that needs Java 17, MongoDB 
 - **A certificate proves a name, not an IP.** That's why the fix needed a DNS name first, even for a LAN-only app
 - **DNS-01 vs HTTP-01:** proving ownership through DNS means nothing has to be opened to the internet
 - **Certificate names are public.** Issued certificates go into public transparency logs, so a subdomain name isn't a secret even when the service is private
+- **Check routes before picking a subnet.** Docker can claim big blocks of 192.168.x, and running `ip route get <address>` on a server shows where its replies will actually go
+- **Firewall rules aren't the whole path.** A request can be allowed through and still fail because the reply goes the wrong way
+- **Moving the smaller thing is often the better design.** A list of everything tied to the server addresses changed the plan
 - **Packet counters can map a network.** An uplink's traffic roughly equals every other port combined, which helped identify a switch's router link without touching a cable
 - **Unmanaged switches are invisible to the controller.** The topology view can show devices as directly attached when they aren't
 - **`latest` doesn't always mean newest.** This image keeps `latest` on v5 so a major upgrade can't happen by surprise
