@@ -42,7 +42,7 @@ services:
     # command: postgres -c config_file=/etc/postgresql/postgresql.conf # Use custom config, uncomment if you want to use a custom config
 
   dawarich_app:
-    image: freikin/dawarich:1.16.0
+    image: freikin/dawarich:1.21.0
     container_name: dawarich_app
     volumes:
       - dawarich_public:/var/app/public
@@ -59,7 +59,11 @@ services:
     entrypoint: web-entrypoint.sh
     command: ['bin/rails', 'server', '-p', '3000', '-b', '::']
     restart: unless-stopped
+    stop_grace_period: 60s
     environment:
+      SIDEKIQ_EMBEDDED: 'true'
+      WEB_CONCURRENCY: '0'
+      BACKGROUND_PROCESSING_CONCURRENCY: ${BACKGROUND_PROCESSING_CONCURRENCY:-2}
       RAILS_ENV: ${RAILS_ENV:-development}
       REDIS_URL: ${REDIS_URL:-redis://dawarich_redis:6379}
       DATABASE_HOST: ${DATABASE_HOST:-dawarich_db}
@@ -105,68 +109,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: ${APP_CPU_LIMIT:-0.50}
+          cpus: ${APP_CPU_LIMIT:-1.00}
           memory: ${APP_MEMORY_LIMIT:-4G}
 
-  dawarich_sidekiq:
-    image: freikin/dawarich:1.16.0
-    container_name: dawarich_sidekiq
-    volumes:
-      - dawarich_public:/var/app/public
-      - dawarich_watched:/var/app/tmp/imports/watched
-      - dawarich_storage:/var/app/storage
-    networks:
-      - dawarich
-    stdin_open: true
-    tty: true
-    entrypoint: sidekiq-entrypoint.sh
-    command: ['sidekiq']
-    restart: unless-stopped
-    environment:
-      RAILS_ENV: ${RAILS_ENV:-development}
-      REDIS_URL: ${REDIS_URL:-redis://dawarich_redis:6379}
-      DATABASE_HOST: ${DATABASE_HOST:-dawarich_db}
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
-      DATABASE_PASSWORD: <redacted>
-      DATABASE_NAME: ${DATABASE_NAME:-dawarich_development}
-      APPLICATION_HOSTS: ${APPLICATION_HOSTS:-localhost,::1,127.0.0.1,<LAN_IP>,<redacted-domain>}
-      BACKGROUND_PROCESSING_CONCURRENCY: ${BACKGROUND_PROCESSING_CONCURRENCY:-10}
-      APPLICATION_PROTOCOL: ${APPLICATION_PROTOCOL:-http}
-      PROMETHEUS_EXPORTER_ENABLED: ${PROMETHEUS_EXPORTER_ENABLED:-false}
-      PROMETHEUS_EXPORTER_HOST: ${PROMETHEUS_EXPORTER_HOST_SIDEKIQ:-dawarich_app}
-      PROMETHEUS_EXPORTER_PORT: ${PROMETHEUS_EXPORTER_PORT:-9394}
-      SECRET_KEY_BASE: <redacted>
-      RAILS_LOG_TO_STDOUT: ${RAILS_LOG_TO_STDOUT:-true}
-      SELF_HOSTED: ${SELF_HOSTED:-true}
-      STORE_GEODATA: ${STORE_GEODATA:-true}
-      OIDC_CLIENT_ID: <redacted>
-      OIDC_CLIENT_SECRET: <redacted>
-      OIDC_ISSUER: https://<redacted-domain>/application/o/dawarich/
-      OIDC_REDIRECT_URI: https://<redacted-domain>/users/auth/openid_connect/callback
-      OIDC_PROVIDER_NAME: "Sign in with Authentik"
-      OIDC_AUTO_REGISTER: "false"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: ${LOG_MAX_SIZE:-100m}
-        max-file: ${LOG_MAX_FILE:-5}
-    healthcheck:
-      test: [ "CMD-SHELL", "pgrep -f sidekiq" ]
-      interval: 10s
-      retries: 30
-      start_period: 30s
-      timeout: 10s
-    depends_on:
-      dawarich_db:
-        condition: service_healthy
-        restart: true
-      dawarich_redis:
-        condition: service_healthy
-        restart: true
-      dawarich_app:
-        condition: service_healthy
-        restart: true
 
 volumes:
   dawarich_db_data:

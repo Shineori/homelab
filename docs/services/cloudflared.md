@@ -52,7 +52,7 @@ Keeping them separate means each tunnel has its own token and its own routes, an
 | Authentik (the SSO itself) | ShiNAS | Passkey login (deliberately *not* behind Access, or logins would loop) |
 | Vaultwarden | ShiNAS | App login (its clients need direct API access) |
 | Immich | ShiNAS | App login, with optional Authentik SSO |
-| Dawarich | ShineoriServer | App login, with optional Authentik SSO |
+| Dawarich | ShineoriServer | Cloudflare Access on the website, API key on `/api`, then app login with optional Authentik SSO |
 | Jellyfin, Audiobookshelf | ShiNAS | App login |
 | Karakeep | ShineoriServer | App login |
 | Open WebUI | ShineoriServer | App login (usually spun down) |

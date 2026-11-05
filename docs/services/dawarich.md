@@ -7,8 +7,8 @@
 | **Host** | ShineoriServer |
 | **Category** | Apps |
 | **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
-| **Exposed?** | Cloudflare Tunnel (no open ports) |
-| **Version** | 1.16.0 (pinned) |
+| **Exposed?** | Cloudflare Tunnel (no open ports). The website sits behind Cloudflare Access; `/api` stays reachable and needs an API key |
+| **Version** | 1.21.0 (pinned) |
 | **Login** | Authentik SSO (OIDC), plus local password login |
 
 Compose file: [`stacks/dawarich/`](https://github.com/shineori/homelab/tree/main/stacks/dawarich)
@@ -21,26 +21,26 @@ I like having a timeline of where I've been, like Google Timeline, but a record 
 
 ## Architecture
 
-Dawarich is four containers on a private Docker network. Only the web app has a published port.
+Dawarich is three containers on a private Docker network. Only the web app has a published port.
 
 ```mermaid
 flowchart LR
-    phone([Phone / browser]) --> cf[Cloudflare edge]
+    browser([Browser]) --> access[Cloudflare Access<br/>website login]
+    phone([Phone tracker]) -- API key on /api --> cf[Cloudflare edge]
+    access --> cf
     cf --> tun[[Tunnel<br/>cloudflared on ShiNAS]]
-    tun -- LAN --> app[dawarich_app<br/>Rails web app]
+    tun -- LAN --> app[dawarich_app<br/>Rails web app + background jobs]
     app --> db[(dawarich_db<br/>PostgreSQL + PostGIS)]
     app --> redis[(dawarich_redis<br/>job queue)]
-    sidekiq[dawarich_sidekiq<br/>background jobs] --> db
-    sidekiq --> redis
     app -. OIDC login .-> ak[Authentik]
+    app -- API key --> immich[Immich<br/>photos on the map]
 ```
 
 | Container | Job |
 |---|---|
-| `dawarich_app` | The web interface and API that receives location points |
-| `dawarich_sidekiq` | Background work: imports, reverse geocoding, stats |
+| `dawarich_app` | The web interface, the API that receives location points, and background work (imports, reverse geocoding, stats) |
 | `dawarich_db` | PostgreSQL with **PostGIS**, an extension for storing and querying map coordinates |
-| `dawarich_redis` | The queue that hands jobs from the app to Sidekiq |
+| `dawarich_redis` | The queue for background jobs, which now run inside the app container |
 
 **Where the data lives:** five Docker *named volumes* (`db_data`, `storage`, `public`, `watched`, `shared`), not the stack's folder. That matters when moving or backing it up (see the troubleshooting log).
 
@@ -49,6 +49,8 @@ flowchart LR
 | Decision | Why |
 |---|---|
 | **Published through the Cloudflare Tunnel** | Location data can arrive from anywhere, with no open router ports |
+| **Cloudflare Access on the website, bypass on `/api`** | A personal location history should not have a public login page. Phone trackers cannot complete a browser login, so `/api` skips Access and still requires an API key |
+| **Production mode (`RAILS_ENV=production`)** | The project warns against running a self-hosted instance in development mode, and development mode is not meant for an internet-facing app |
 | **Login through Authentik (OIDC)** | One passkey login instead of another password (see [Authentik](authentik.md)) |
 | **`OIDC_AUTO_REGISTER: "false"`** | Signing in with Authentik can't create new Dawarich accounts, only log in to existing ones |
 | **Database has no published port** | PostgreSQL is only reachable by the other containers on the private Docker network |
@@ -58,12 +60,14 @@ flowchart LR
 ## Setup notes
 
 1. Put `SECRET_KEY_BASE` and `DAWARICH_OIDC_SECRET` in `.env`, plus `APPLICATION_HOSTS` with the public hostname and the server's LAN IP
-2. `docker compose up -d` and wait until all four containers report **healthy**
+2. Add `RAILS_ENV=production` and your `TIME_ZONE` to `.env`, then run `docker compose up -d` and wait until all three containers report **healthy**
 3. Add a tunnel route: public hostname → `http://<LAN_IP>:3009`
 4. **SSO:** create an OAuth2/OIDC provider in Authentik with Dawarich's redirect URI. Dawarich needs a **verified email claim**, so the provider uses a custom scope mapping (see the troubleshooting log).
 5. Point the phone's location tracking at the public hostname
 6. **Always start logins from the public hostname**, not the IP (see the troubleshooting log)
 7. **Health checks go to `/api/v1/health`**, not `/`. Since 1.16.0, `/` redirects to the sign-in page.
+8. **Cloudflare Access:** create the `/api` bypass app first, then the app for the whole site, so the phone tracker is never cut off. The more specific path wins.
+9. **Immich:** create a key with `asset.read` and `asset.view` (plus `asset.update` for Enrich Photos) and save it in Dawarich's Immich integration settings.
 
 ## Troubleshooting log
 
@@ -75,6 +79,10 @@ flowchart LR
 | 2026-10-11 | *Sign in with Authentik* ended on a Cloudflare **502** | The tunnel route still pointed at the old machine. I'd also started the login on the LAN IP, but Authentik sends you back to the public hostname, so the login cookie wouldn't have matched anyway. | Repointed the tunnel route and started the login from the public hostname |
 | 2026-10-13 | The web app was down for hours while the database and background worker were fine | I'd rebooted the laptop. Docker stopped every container cleanly (exit code 0), and the web app and worker used the upstream `restart: on-failure` policy, which only restarts after a *crash*, so a clean stop left them down. | Changed both to `restart: unless-stopped`, like every other app in the lab. Found the cause in the system journal: `sudo reboot now` at the exact second the app shut down. |
 | 2026-10-21 | Upgrading 1.15.3 to 1.16.0 | The release notes warned about a one-time background migration (merging duplicate legacy points and recalculating achievements) and that `/` now redirects to sign-in | Diffed the upstream compose file between the two versions first: no changes. Backed up the stopped stack and all its volumes, bumped both image tags, then let the migration finish before judging anything. `/api/v1/health` answered `{"status":"ok"}`. |
+| 2026-11-04 | Upgrading 1.16.0 to 1.21.0 | Since 1.17.0, background jobs run inside `dawarich_app`, so the separate Sidekiq container has to go | Backed up the database and files, stopped and removed `dawarich_sidekiq`, added `SIDEKIQ_EMBEDDED`, `WEB_CONCURRENCY: '0'`, `BACKGROUND_PROCESSING_CONCURRENCY` and `stop_grace_period`, and raised the CPU limit to one core. Kept Redis on 7.4, since Redis 8 is only the new default. |
+| 2026-11-04 | Visits dropped from 161 to 20 shortly after the upgrade | An upgrade job rebuilt suggested visits from recorded points, as the 1.18.0 notes warned. None were confirmed, so none were protected, and visits the phone reported during a two-week gap in location points had nothing to rebuild from. | Location points were untouched and the old visits remain in the pre-upgrade backup. Lesson: compare counts again after background jobs finish, not just right after startup. |
+| 2026-11-04 | "Failed to load photos" on the map | Immich rejected the saved API key with a 401, both through the tunnel and directly on the LAN, so the update was not the cause | Created a new Immich key with only the needed permissions and saved it in Dawarich |
+| 2026-11-04 | Stats and days could land on the wrong date | `TIME_ZONE` had silently stayed on the compose default, `Europe/London` | Set `TIME_ZONE` in `.env` to my own time zone |
 
 ## What I'd harden next
 
@@ -89,3 +97,6 @@ flowchart LR
 - **Host allow-lists:** web frameworks like Rails refuse requests for hostnames they weren't told about, which blocks a class of attacks but needs updating when a server moves
 - **Read the release notes, then diff the compose file:** the notes say what changes inside the app, the compose diff says whether my setup has to change too
 - **OIDC flows are tied to addresses:** the redirect URI and the login cookie both depend on the hostname, so mixing an IP and a domain breaks the login
+- **Path-based Access rules:** one hostname can have a login-protected website and an API-key-only path, because the most specific rule wins
+- **Reachable is not the same as authorized:** a ping can succeed while the API key behind it has stopped working, so test with the real credentials
+- **A healthy container does not mean the upgrade is finished:** background jobs can keep changing data after startup
