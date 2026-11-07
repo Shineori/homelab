@@ -117,7 +117,6 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 |---|---|---|---|
 | [Pentesting lab](docs/services/pentest-lab.md) | Windows PC | 🟢 | Attacker/target lab for practicing offensive security legally |
 | [OPNsense router lab](docs/services/opnsense-lab.md) | Windows PC | 🟢 | Virtual OPNsense router in VMware Workstation Pro, rehearsal for a NUC router |
-| [EVE-NG](docs/services/eve-ng.md) | Windows PC | 🟡 | Network emulation lab (Community Edition) |
 
 ### Web
 

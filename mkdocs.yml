@@ -76,6 +76,5 @@ nav:
       - Security labs:
           - "Pentesting lab": services/pentest-lab.md
           - "OPNsense router lab": services/opnsense-lab.md
-          - "EVE-NG": services/eve-ng.md
       - Web:
           - "Terminal resume site": services/resume-site.md
