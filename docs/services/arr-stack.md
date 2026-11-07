@@ -75,12 +75,14 @@ flowchart LR
 | — | qBittorrent could refuse to start after an unclean shutdown | A stale `lockfile` left in its config folder | The container's entrypoint deletes the lockfile before starting |
 | — | The forwarded port changes whenever the VPN reconnects, breaking incoming connections | ProtonVPN assigns a new port each session | Added the `qb_port_sync` sidecar, which updates qBittorrent automatically |
 | 2026-10-11 | Every arr app went down at the same moment | The whole NAS was overloaded by Immich, not a problem in this stack ([diagnosis](immich.md#troubleshooting-log)) | Fixed the overload and moved RAM-heavy apps to my second server; the stack is back up |
+| 2026-11-06 | Prowlarr logged `database disk image is malformed` hundreds of times a day. I only noticed during an upgrade pass, but its old logs showed it had started in mid-June. | SQLite's integrity check found damage in **one** table, `Commands`, which is just Prowlarr's queue of background jobs. Every other table (indexers, apps, history) was fine. | Stopped Prowlarr, backed up the database, rebuilt it with SQLite's `.recover`, and emptied `Commands`. Before swapping it in I compared every table's row count with the original (all identical, 12 indexers kept). It started with zero errors and passed the integrity check while running. The damaged file is kept for rollback. |
 
 ## What I'd harden next
 
 - [ ] Remove a leftover port (`6969`) still published and allowed through gluetun's firewall for an app that's no longer in the stack
 - [ ] Pin the `curlimages/curl` image used by `qb_port_sync`
 - [ ] Put the qBittorrent password in a file instead of an environment variable
+- [ ] Check app logs for repeating errors during my weekly checkup, so a problem like the Prowlarr database doesn't go unnoticed for months
 
 ## What I learned
 
@@ -88,3 +90,4 @@ flowchart LR
 - **VPN port forwarding** and why a dynamic port needs automation
 - **Hard links and atomic moves** only work when the download and library folders are on the same mount
 - **Small sidecar containers** can glue two apps together without changing either one
+- **A "working" app can still be broken underneath:** Prowlarr kept running for months with a damaged database. Checking which table was hurt first turned a scary error into a safe, small repair.

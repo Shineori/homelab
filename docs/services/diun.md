@@ -8,7 +8,7 @@
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running |
 | **Exposed?** | No. Outbound only (container registries, a Discord webhook, and my [Hermes Agent](hermes-agent.md) on the LAN) |
-| **Version** | 4.33.0 (pinned) |
+| **Version** | 4.33.1 (pinned) |
 
 Compose file: [`stacks/diun/`](https://github.com/shineori/homelab/tree/main/stacks/diun)
 
@@ -25,6 +25,29 @@ every 6h: check registries for     ──▶  "immich-server v3.3.2 is out" → 
 new stable version tags                  read release notes → bump the tag → update
 never installs anything                  roll back = change the tag back
 ```
+
+## Architecture
+
+The same small stack runs on both servers, so each one watches its own containers:
+
+```mermaid
+flowchart LR
+    subgraph NAS[ShiNAS]
+        d1[Diun] --> p1[socket-proxy<br/>read-only] --> s1[(docker.sock)]
+    end
+    subgraph LAP[ShineoriServer]
+        d2[Diun] --> p2[socket-proxy<br/>read-only] --> s2[(docker.sock)]
+    end
+    d1 -- "every 6h: new tags?" --> R[Container registries]
+    d2 -- "every 6h: new tags?" --> R
+    d1 -- "new version" --> D[Discord]
+    d2 -- "new version" --> D
+    D --> Me[Me: read notes, bump the pin]
+```
+
+- Diun only **reads**: which images are running, and which newer tags exist upstream
+- Each Discord message is labelled with its server's hostname
+- Nothing is published: no ports, no tunnel, only outbound connections
 
 ## How the pinning was done (safely)
 
@@ -50,6 +73,16 @@ Databases (Postgres, PostGIS, Redis/Valkey) stay **locked to their major version
 | `hostname: shinas` / `shineoriserver` | Each Discord notification says which server it's about, since Diun runs on both |
 | A **separate Discord webhook and channel** | Update chatter stays out of my security-alerts channel, and either webhook can be revoked on its own |
 | Webhook in a root-only `.env` | Entered with `read -s`, so it never touched the screen, my shell history, the compose file or git |
+
+## Security decisions
+
+| Decision | Why |
+|---|---|
+| No Docker socket inside Diun, only a read-only socket proxy | Socket access is root on the host. Diun only needs to list containers and images (details below). |
+| Webhook URLs and tokens live in a root-only `.env` | Secrets never appear in the compose file, my shell history or this repo |
+| Separate Discord channel and webhook for updates | Update noise stays out of security alerts, and each webhook can be revoked on its own |
+| Diun never updates anything | A notification can't break an app. I upgrade by hand after reading the release notes. |
+| Stable tags only (no rc, beta, nightly) | I only want to hear about versions I'd actually install |
 
 ## Least privilege: the socket proxy
 
@@ -93,6 +126,14 @@ Each Diun instance has a **second notifier**: a webhook to [Hermes Agent](hermes
 | Lives in the same root-only `.env` as the Discord webhook | Same rule: secrets never touch the compose file or git |
 
 `diun notif test` now fires both notifiers. The test image is `latest`, so the right answer from Hermes is "can't scout a floating tag", and that's what it says.
+
+## Setup notes
+
+1. Copy [`stacks/diun/`](https://github.com/shineori/homelab/tree/main/stacks/diun) to the server and set `hostname:` to that server's name
+2. Create the root-only `.env` for the Discord webhook (`sudo touch .env && sudo chmod 600 .env`), then add the URL with `read -s` so it never shows on screen
+3. `docker compose up -d`, then `docker compose exec diun diun notif test` to confirm the Discord message arrives
+4. Check the socket proxy really blocks writes: a create request from its network should return `403`
+5. The first scan stays quiet (`FIRSTCHECKNOTIF: false`), so the first real notification only comes when a new version ships
 
 ## How I apply an update
 

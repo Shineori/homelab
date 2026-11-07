@@ -3,7 +3,7 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     # must match the NAS's Immich version exactly; no -cuda = CPU build
-    image: ghcr.io/immich-app/immich-machine-learning:v3.3.5
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.6
     volumes:
       - model-cache:/cache            # downloaded AI models live here
     environment:

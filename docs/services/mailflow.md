@@ -8,7 +8,7 @@
 | **Category** | Apps |
 | **Status** | 🟢 running |
 | **Exposed?** | LAN only, HTTPS on port `8445` bound to the laptop's LAN IP. Plain HTTP isn't published. Not on any tunnel. |
-| **Version** | MailFlow `4.1.2`, Postgres `16.15`, Redis `7.4.12`, all pinned by tag and digest |
+| **Version** | MailFlow `4.3.0`, Postgres `16.15`, Redis `7.4.12`, all pinned by tag and digest |
 
 Compose file: [`stacks/mailflow/`](https://github.com/shineori/homelab/tree/main/stacks/mailflow)
 Upstream: [maathimself/mailflow](https://github.com/maathimself/mailflow)

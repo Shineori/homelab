@@ -12,7 +12,7 @@ services:
     networks: [socket]   # private network only: no ports, no internet
 
   diun:
-    image: crazymax/diun:4.33.0
+    image: crazymax/diun:4.33.1
     container_name: diun
     hostname: shinas
     command: serve

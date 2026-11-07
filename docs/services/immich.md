@@ -8,7 +8,7 @@
 | **Category** | Media |
 | **Status** | 🟢 running |
 | **Exposed?** | Cloudflare Tunnel (no open ports) |
-| **Version** | v3.3.4 |
+| **Version** | v3.3.6 |
 | **Login** | Authentik SSO (OIDC), plus local password login as a fallback |
 
 Compose file: [`stacks/immich/`](https://github.com/shineori/homelab/tree/main/stacks/immich)
@@ -78,7 +78,7 @@ Immich server (NAS) ──HTTP :3003 over LAN──▶ immich-machine-learning (
   photos + database stay here                  processes images, stores only model files
 ```
 
-- **On ShineoriServer:** [`stacks/immich-ml/`](https://github.com/shineori/homelab/tree/main/stacks/immich-ml) runs the same version tag as the server (`v3.3.4`), bound to the server's LAN IP only; CPU-only, 3-core cap, `MACHINE_LEARNING_MODEL_TTL=300`, and `MACHINE_LEARNING_MODEL_REVISION=v2` (see below)
+- **On ShineoriServer:** [`stacks/immich-ml/`](https://github.com/shineori/homelab/tree/main/stacks/immich-ml) runs the same version tag as the server (`v3.3.6`), bound to the server's LAN IP only; CPU-only, 3-core cap, `MACHINE_LEARNING_MODEL_TTL=300`, and `MACHINE_LEARNING_MODEL_REVISION=v2` (see below)
 - **In Immich:** Administration → Settings → Machine Learning points at the ShineoriServer instance
 - **On the NAS:** the ML service keeps its limits but sits behind `profiles: ["local-ml"]`, so it doesn't start unless I ask for it. Rolling back is one line.
 - **CPU-only processing:** switched to the plain image (no `-cuda` build) so the GPU stays free for Ollama and Hermes. Processing is slower, but it works reliably.
@@ -116,7 +116,7 @@ ML memory   unbounded                      207 MiB / 2 GiB cap
 
 ## What I'd harden next
 
-- [x] **Pinned `IMMICH_VERSION`** ✅ *Done:* an exact version (now `v3.3.4`) instead of a floating tag. I verified it was byte-identical to the running image first, so pinning changed nothing. [Diun](diun.md) now pings me in Discord when a new release ships, so upgrades happen on my schedule, after reading the release notes.
+- [x] **Pinned `IMMICH_VERSION`** ✅ *Done:* an exact version (now `v3.3.6`) instead of a floating tag. I verified it was byte-identical to the running image first, so pinning changed nothing. [Diun](diun.md) now pings me in Discord when a new release ships, so upgrades happen on my schedule, after reading the release notes.
 - [x] **Nightly encrypted backups** ✅ *Done:* the library plus Immich's own nightly database dumps (thumbnails excluded, since they're regenerable) go to an encrypted restic repository on a second disk. **The restore is tested:** the latest database dump came back intact. See [Backups](../infrastructure/backups.md).
 - [x] **Capped the machine-learning container** ✅ *Done:* `mem_limit: 2g` and `cpus: 1.5`, after it overloaded the whole NAS (see the troubleshooting log)
 - [x] **Lowered job concurrency** ✅ *Done:* Smart Search, Face Detection, Video Conversion and Thumbnail Generation now run one at a time, so big backlogs move in one steady lane
