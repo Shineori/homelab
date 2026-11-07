@@ -7,7 +7,7 @@
 | **Host** | ShiNAS + ShineoriServer (one instance on each) |
 | **Category** | Networking & monitoring |
 | **Status** | 🟢 running |
-| **Exposed?** | No. Outbound only (container registries, a Discord webhook, and my [Hermes Agent](hermes-agent.md) on the LAN) |
+| **Exposed?** | No. Outbound only (container registries and a Discord webhook) |
 | **Version** | 4.33.1 (pinned) |
 
 Compose file: [`stacks/diun/`](https://github.com/shineori/homelab/tree/main/stacks/diun)
@@ -79,7 +79,7 @@ Databases (Postgres, PostGIS, Redis/Valkey) stay **locked to their major version
 | Decision | Why |
 |---|---|
 | No Docker socket inside Diun, only a read-only socket proxy | Socket access is root on the host. Diun only needs to list containers and images (details below). |
-| Webhook URLs and tokens live in a root-only `.env` | Secrets never appear in the compose file, my shell history or this repo |
+| The Discord webhook URL lives in a root-only `.env` | Secrets never appear in the compose file, my shell history or this repo |
 | Separate Discord channel and webhook for updates | Update noise stays out of security alerts, and each webhook can be revoked on its own |
 | Diun never updates anything | A notification can't break an app. I upgrade by hand after reading the release notes. |
 | Stable tags only (no rc, beta, nightly) | I only want to hear about versions I'd actually install |
@@ -114,19 +114,6 @@ Diun has the socket?      0     ✅ not mounted
 
 I also removed the socket from [Authentik's worker](authentik.md) entirely, since it never needed it. That means two apps no longer have root-equivalent access to the NAS.
 
-## Update Scout: release notes read for me
-
-Each Diun instance has a **second notifier**: a webhook to [Hermes Agent](hermes-agent.md), my local AI agent. For every new version, Hermes finds the version I'm running, reads the release notes in between, and posts a 🟢 / 🟡 / 🔴 verdict in Discord a few minutes later.
-
-| Setting | Why |
-|---|---|
-| `DIUN_NOTIF_WEBHOOK_ENDPOINT` → Hermes on port 8644 | LAN only. The port is never published through a tunnel |
-| `DIUN_NOTIF_WEBHOOK_METHOD=POST` + JSON content type | Hermes reads the image, host and container name from the body |
-| `DIUN_NOTIF_WEBHOOK_HEADERS_X-GITLAB-TOKEN` | Hermes requires every webhook to be authenticated. Diun can't sign requests, but it can send a fixed header, and Hermes accepts a GitLab-style shared token |
-| Lives in the same root-only `.env` as the Discord webhook | Same rule: secrets never touch the compose file or git |
-
-`diun notif test` now fires both notifiers. The test image is `latest`, so the right answer from Hermes is "can't scout a floating tag", and that's what it says.
-
 ## Setup notes
 
 1. Copy [`stacks/diun/`](https://github.com/shineori/homelab/tree/main/stacks/diun) to the server and set `hostname:` to that server's name
@@ -140,7 +127,7 @@ Each Diun instance has a **second notifier**: a webhook to [Hermes Agent](hermes
 Diun only tells me; I do the update by hand:
 
 ```
-1. read     → Hermes's verdict, then the release notes it links (look for "breaking changes", and be extra careful with major versions)
+1. read     → the release notes between my version and the new one (look for "breaking changes", and be extra careful with major versions)
 2. check    → the version I'm actually running:
               docker inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' <container>
 3. backup   → make sure that night's backup ran, or run one now
@@ -169,8 +156,7 @@ Rolling back is putting the old tag back, **unless** the new version migrated th
 
 - [x] **Put a docker-socket-proxy in front of the Docker socket** ✅ *Done (see below).*
 - [x] **Added Diun to ShineoriServer** ✅ *Done:* the same compose file, downloaded straight from this repo, with `hostname: shineoriserver` so each Discord alert says which machine it's about. Same socket proxy, same #updates channel, and a test notification confirmed it works.
-- [x] **Automatic release-note review** ✅ *Done:* a second notifier sends each new version to [Hermes Agent](hermes-agent.md), which posts a safe / read first / migration needed verdict
-- [ ] A monthly "update day": work through the Discord notifications and Hermes's verdicts, and bump the pins
+- [ ] A monthly "update day": work through the Discord notifications, read the release notes, and bump the pins
 
 ## What I learned
 
