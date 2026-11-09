@@ -1,0 +1,27 @@
+services:
+  gluetun-exit:
+    image: qmcgaw/gluetun:v3
+    container_name: gluetun-exit
+    cap_add: [NET_ADMIN]
+    devices: [/dev/net/tun:/dev/net/tun]
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WG_KEY}
+      - SERVER_COUNTRIES=United States
+    restart: unless-stopped
+
+  tailscale-exit:
+    image: tailscale/tailscale:stable
+    container_name: tailscale-exit
+    network_mode: "service:gluetun-exit"   # rides inside the VPN
+    depends_on: [gluetun-exit]
+    environment:
+      - TS_AUTHKEY=${TS_KEY}
+      - TS_HOSTNAME=proton-exit
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=true                  # avoids fighting Gluetun's firewall
+      - TS_EXTRA_ARGS=--advertise-exit-node --accept-dns=false
+    volumes:
+      - ./ts-state:/var/lib/tailscale
+    restart: unless-stopped

@@ -42,6 +42,7 @@ nav:
       - Networking & monitoring:
           - "Cloudflare Tunnel": services/cloudflared.md
           - "Tailscale": services/tailscale.md
+          - "Proton exit node": services/proton-exit.md
           - "Omada Controller": services/omada-controller.md
           - "Homepage": services/homepage.md
           - "Homarr": services/homarr.md

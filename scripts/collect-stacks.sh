@@ -34,7 +34,7 @@ MAP=(
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
   laptop:minecraft:minecraft  laptop:ollama-stack:ollama-stack
   laptop:omada-controller:omada  laptop:paperless:paperless  laptop:addy:addy
-  laptop:gmail-cleaner:gmail-cleaner  laptop:nextexplorer:nextexplorer  laptop:mailflow:mailflow  laptop:homepage:homepage  laptop:dozzle:dozzle
+  laptop:gmail-cleaner:gmail-cleaner  laptop:nextexplorer:nextexplorer  laptop:mailflow:mailflow  laptop:homepage:homepage  laptop:dozzle:dozzle  laptop:proton-exit:proton-exit
 )
 
 # Extra (non-compose) files worth keeping, per repo folder. Paths are relative to the stack folder.

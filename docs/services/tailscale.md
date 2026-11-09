@@ -54,6 +54,7 @@ flowchart LR
 - The NAS app signs in using the NAS's Tailscale address instead of my public hostname, so Cloudflare Access is never in the path.
 - **`tailscale serve`** gives each private app an HTTPS address with a valid certificate, reachable only from my tailnet. It's a separate listener in front of the app's normal port.
 - The [Cloudflare Tunnel](cloudflared.md) still handles public web apps. Tailscale is only for private access.
+- For privacy on the go, a separate [Proton exit node](proton-exit.md) on ShineoriServer lets my devices send their internet traffic out through ProtonVPN while staying on the tailnet.
 
 ## Security decisions
 
