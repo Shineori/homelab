@@ -130,6 +130,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 - [Network & remote access](docs/infrastructure/network.md)
 - [Single sign-on](docs/infrastructure/sso.md)
 - [Backups](docs/infrastructure/backups.md)
+- [Backrest (backup dashboard)](docs/infrastructure/backrest.md)
 - [Minecraft world backups](docs/infrastructure/minecraft-backups.md)
 - [Alerting & email](docs/infrastructure/alerting.md)
 

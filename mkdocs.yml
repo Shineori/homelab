@@ -29,6 +29,7 @@ nav:
       - "Splitting my network into VLANs": infrastructure/vlan-segmentation.md
       - Single sign-on: infrastructure/sso.md
       - Backups: infrastructure/backups.md
+      - "Backrest (backup dashboard)": infrastructure/backrest.md
       - "Minecraft world backups": infrastructure/minecraft-backups.md
       - Alerting: infrastructure/alerting.md
       - "Moving services off the NAS": infrastructure/migration.md

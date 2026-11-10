@@ -4,10 +4,11 @@
 
 | | |
 |---|---|
-| **Tool** | [restic](https://restic.net) 0.19.1 (single binary, checksum-verified on install) |
-| **Schedule** | Nightly at 03:30 (an hour after Immich's own 02:00 database dump) |
+| **Tool** | [restic](https://restic.net) 0.19.1, scheduled and managed by **[Backrest](backrest.md)** since 2026-11-10 |
+| **Schedule** | Nightly, one Backrest plan per app: Vaultwarden 01:00, Authentik 01:10, small website 01:20, Immich 02:30 (after Immich's own 02:00 database dump). The old 03:30 cron script runs in parallel until the cutover. |
 | **Destination** | Encrypted restic repository on the NAS's **second physical disk** |
-| **Script** | [`scripts/homelab-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/homelab-backup.sh) |
+| **Hooks** | [`scripts/shinas-hooks.sh`](https://github.com/shineori/homelab/blob/main/scripts/shinas-hooks.sh) (consistent copies before each backup). Retiring: [`scripts/homelab-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/homelab-backup.sh) |
+| **Dashboard** | [Backrest](backrest.md): one page for both servers, with point-and-click restores |
 | **Also covers** | ShineoriServer's apps, through an append-only backup server ([details below](#shineoriserver-backups-append-only)) |
 | **Copy 3 + off-site** | My Windows PC pulls both repositories every morning into its own repository inside iCloud Drive ([details below](#copy-3-off-site-windows-pc-icloud)) |
 | **Retention** | 7 daily, 4 weekly, 12 monthly (one year of history), on every copy |
@@ -29,33 +30,40 @@ While documenting the lab, I discovered **there were no backups at all**. I had 
 | *Excluded:* Immich thumbnails + transcoded video | | Regenerable, and would only bloat the backups |
 | **Authentik** database (added 2026-10-30) | `pg_dump -Fc` while it runs, then `pg_restore --list` to prove the dump is readable | My single sign-on sits in front of several apps. Losing it means rebuilding every login flow and passkey. A dump is consistent; a copied Postgres folder is not. |
 | Authentik `.env`, `compose.yml`, `data`, `certs`, `custom-templates` | Copied into a root-only staging folder | `.env` holds the secret key. Without it, a restored database can't decrypt its own stored secrets. |
+| **A small website** (added 2026-11-10) | Its visit-counter database as a consistent SQLite snapshot + integrity check, plus the site files and config | Small, but rebuilding it by hand would take an evening. First written on 2026-11-07 and never installed; it only really started with Backrest. |
 
 ## How it works
 
+Since 2026-11-10, [Backrest](backrest.md) runs everything below. Each app is its own plan, and a hook makes the consistent copy right before restic reads it.
+
 ```mermaid
 flowchart LR
-    cron([cron 03:30]) --> s[homelab-backup.sh]
-    s --> v[Vaultwarden<br/>SQLite online backup<br/>+ integrity check]
-    s --> i[Immich library<br/>+ nightly DB dump]
-    s --> a[Authentik<br/>pg_dump + pg_restore --list<br/>+ .env, certs, templates]
+    b([Backrest<br/>nightly plans]) --> h[shinas-hooks.sh pre]
+    h --> v[Vaultwarden<br/>SQLite online backup<br/>+ integrity check]
+    h --> a[Authentik<br/>pg_dump + pg_restore --list<br/>+ .env, certs, templates]
+    h --> w[Small website<br/>SQLite snapshot + files]
+    b --> i[Immich library<br/>+ nightly DB dump]
     v --> r[(restic repo<br/>second disk<br/>encrypted · deduplicated)]
-    i --> r
     a --> r
-    r --> k[forget/prune<br/>7 daily · 4 weekly · 12 monthly]
-    k --> c[restic check<br/>re-reads 5% of data]
-    s -. any failure .-> d([📱 Discord alert])
+    w --> r
+    i --> r
+    r --> k[forget after each backup<br/>7 daily · 4 weekly · 12 monthly]
+    k --> p[prune Sundays<br/>check Wednesdays, re-reads 5%]
+    b -. any failure .-> d([📱 Discord alert])
 ```
+
+> **Before Backrest** (until the cutover): one cron script, [`homelab-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/homelab-backup.sh), did all of this at 03:30, including a nightly `forget --prune` and `check`. Pruning and checking are now weekly, which is plenty for a repository this size.
 
 | Design choice | Why |
 |---|---|
 | **Encrypted** (restic repository password) | A stolen or discarded disk is useless without it. The password is stored in my vault *and* on paper, because if the vault is what I need to restore, I can't look the password up in it. |
 | **Deduplicated** | Nightly runs only store what changed. The first run was 2.3 GiB, and later runs add a few MiB. |
 | **Retention: 7 daily, 4 weekly, 12 monthly** | I can go back in time, for example to before a bad update corrupted something. Raised from 6 to 12 monthly on 2026-10-30 for a full year of history. Thanks to deduplication, the extra months cost very little space. |
-| **Verifies itself nightly** | `restic check --read-data-subset=5%` proves the stored data can still be read back |
-| **Fails loudly** | An `ERR` trap sends a Discord alert. Silent backup failure is how people lose data. |
-| **No secrets in arguments** | The Discord webhook reaches `curl` through stdin, never the command line (a lesson from my [auditd script](../services/security-monitoring.md)) |
-| **Plaintext staging is deleted** | The temporary vault snapshot is removed after backup, and also on failure (via the trap) |
-| **Overlap lock** (`flock`) | A slow run can never collide with the next one |
+| **Verifies itself weekly** | A scheduled `restic check` re-reads 5% of the stored data every Wednesday (nightly under the old script) |
+| **Fails loudly** | Backrest posts any failed operation to Discord (the old script used an `ERR` trap). Silent backup failure is how people lose data. |
+| **No secrets in arguments** | Repo passwords stay in root-only files that Backrest reads through `RESTIC_PASSWORD_FILE`. The old script also passed its Discord webhook to `curl` over stdin, a lesson from my [auditd script](../services/security-monitoring.md). |
+| **Plaintext staging is deleted** | A post-backup hook removes the temporary vault snapshot whether the backup succeeded or failed |
+| **No overlapping runs** | Backrest queues operations on a repository one at a time (the old script used `flock`) |
 | **Installed from GitHub with checksum verification** | Docker Hub's anonymous pull limit blocked the container image, so I installed the official binary and verified it against the release's `SHA256SUMS` |
 
 ## The restore test ✅
@@ -104,6 +112,12 @@ password ──▶ unlocks the repository key ──▶ decrypts the backups
 | `/root/.restic-password` (root-only file on the NAS) | **Automatically**, every night. I never type it. |
 | 🔐 My vault + 📝 a paper copy | **Disaster only:** the NAS was reinstalled, the file is gone, or the backup disk moved to another machine |
 
+### The easy way: the Backrest UI 🖱️
+
+Open [Backrest](backrest.md), pick the plan, pick a snapshot, then **Restore** (to a folder of your choice) or **Download** a single file. Everything below is the command-line fallback, for when Backrest itself is down.
+
+> **Tags:** Backrest tags its snapshots `plan:vaultwarden`, `plan:immich`, `plan:authentik`. Snapshots from the old script use plain `vaultwarden`, `immich`, `authentik` and age out by November 2027. `restic snapshots` shows both.
+
 ### Setup for every command below (on the NAS)
 
 ```bash
@@ -115,7 +129,7 @@ sudo -E restic snapshots                              # the timeline of every ba
 ### Scenario A: get back a single file or an older version 🙂
 
 ```bash
-sudo -E restic restore latest --tag vaultwarden --target /tmp/restore   # or a snapshot ID instead of "latest"
+sudo -E restic restore latest --tag plan:vaultwarden --target /tmp/restore   # or a snapshot ID instead of "latest"
 # ...copy what you need out of /tmp/restore, then:
 sudo rm -rf /tmp/restore
 ```
@@ -130,7 +144,7 @@ sudo mkdir -p /mnt/restic && sudo -E restic mount /mnt/restic
 ### Scenario B: restore Vaultwarden completely 🔑
 
 ```bash
-sudo -E restic restore latest --tag vaultwarden --target /tmp/restore
+sudo -E restic restore latest --tag plan:vaultwarden --target /tmp/restore
 cd ~/docker/vaultwarden && sudo docker compose stop          # nothing writes during the swap
 sudo cp -a vw-data vw-data.before-restore                    # safety copy of the current state
 sudo cp -a /tmp/restore/volume2/backups/staging/vaultwarden/. vw-data/
@@ -141,13 +155,13 @@ The backup includes the database, `rsa_key*` (without it, existing logins break)
 
 ### Scenario C: restore Immich 📸
 
-1. Restore the library: `sudo -E restic restore latest --tag immich --target /tmp/restore`, then copy `.../immich/library/` back into place with the stack stopped
+1. Restore the library: `sudo -E restic restore latest --tag plan:immich --target /tmp/restore`, then copy `.../immich/library/` back into place with the stack stopped
 2. The database comes back from the newest dump in `library/backups/*.sql.gz`, following **Immich's official restore procedure for the installed version** (it loads the dump into a fresh, empty database container). Thumbnails regenerate on their own afterwards.
 
 ### Scenario C2: restore Authentik 🔑
 
 ```bash
-sudo -E restic restore latest --tag authentik --target /tmp/restore
+sudo -E restic restore latest --tag plan:authentik --target /tmp/restore
 S=/tmp/restore/volume2/backups/staging/authentik
 cd ~/docker/authentik && sudo docker compose stop server worker      # keep only the database running
 sudo cp -a $S/.env $S/compose.yml .                                  # .env holds the secret key: it must match the database
@@ -172,7 +186,7 @@ After [moving six services](migration.md) to my laptop server, their data sat ou
 
 ```mermaid
 flowchart LR
-    cron([cron 04:15<br/>laptop]) --> s[laptop-backup.sh]
+    cron([Backrest plan apps<br/>laptop, nightly]) --> s[laptop-hooks.sh pre]
     s --> d[Dawarich<br/>pg_dump + pg_restore --list]
     s --> a[addy.io<br/>mariadb-dump --single-transaction]
     s --> p[Uptime Kuma, Karakeep, Paperless<br/>paused ~3 s for a consistent copy]
@@ -183,7 +197,7 @@ flowchart LR
     w --> r
     r -- HTTP over LAN --> rs[rest-server on ShiNAS<br/>--append-only --private-repos]
     rs --> repo[(second disk<br/>separate repository)]
-    nas([cron Sun 05:00<br/>ShiNAS]) --> pr[laptop-backup-prune.sh<br/>forget/prune + check]
+    nas([Backrest on ShiNAS<br/>prune Sun · check Wed]) --> pr[laptop-forget hook<br/>forget 7·4·12, then prune]
     pr --> repo
     s -. any failure .-> dc([📱 Discord alert])
     pr -. any failure .-> dc
@@ -193,8 +207,8 @@ flowchart LR
 |---|---|
 | **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), addy.io (database dump + its folder: config, app key and DKIM key; added 2026-10-30), `~/docker/sites` (a small Node site and its JSON data file; added 2026-10-30), Dozzle (login and agent certificate; added 2026-11-05), Omada Controller auto backup files (added 2026-11-05), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
 | **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (it has [its own daily backup](minecraft-backups.md); I briefly added it here too, then took it back out the same day because one Minecraft backup process is plenty) |
-| **Schedule** | Laptop nightly at 04:15, after the NAS's own 03:30 run so they don't compete for the disk. NAS cleanup Sundays at 05:00. |
-| **Scripts** | [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh) on the laptop, [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) on the NAS |
+| **Schedule** | Run by [Backrest](backrest.md) since 2026-11-10: the laptop's `apps` plan nightly at 03:15 UTC (the laptop's clock is UTC), the NAS's forget + prune Sundays 06:30 and a 5% check Wednesdays. The old crons (04:15 laptop, Sundays 05:00 NAS) run in parallel until the cutover. |
+| **Scripts** | Hooks: [`laptop-hooks.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-hooks.sh) (dumps and the short app pause) and the `laptop-forget` step in [`shinas-hooks.sh`](https://github.com/shineori/homelab/blob/main/scripts/shinas-hooks.sh). Retiring: [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh), [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) |
 | **Backup server** | [`stacks/restic-server/`](https://github.com/shineori/homelab/tree/main/stacks/restic-server), bound to the NAS's LAN IP |
 | **Size** | First run: 340 MiB of data, 167 MiB stored after compression |
 
@@ -204,7 +218,7 @@ flowchart LR
 | **Encrypted on the laptop** | The NAS only ever receives encrypted data |
 | **`--private-repos`** | The laptop's login can only reach its own repository |
 | **A separate repository** | The NAS's backups and the laptop's can't affect each other |
-| **`pg_dump` for Dawarich, a short pause for the SQLite apps** | Both give a consistent copy. PostgreSQL can dump while it runs. For the small SQLite apps, stopping them for about 3 seconds is simpler and more reliable than locating every database file. An `EXIT` trap restarts them even if the backup fails. |
+| **`pg_dump` for Dawarich, a short pause for the SQLite apps** | Both give a consistent copy. PostgreSQL can dump while it runs. For the small SQLite apps, stopping them for about 3 seconds is simpler and more reliable than locating every database file. A post-backup hook restarts them whether the backup succeeded or failed, and an `ERR` trap inside the pre-backup hook restarts them if a dump fails first. |
 | **Secrets in root-only files** | The server login lives in a `chmod 600` repository file and the encryption key in a `chmod 600` password file. Both were typed with `read -s`, so neither appeared on screen or in shell history. The key is also in my password manager. |
 
 ### Proven ✅
@@ -293,7 +307,7 @@ $R = Get-ChildItem "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\restic.restic_*\
 $env:RESTIC_REPOSITORY    = "$env:USERPROFILE\iCloudDrive\Backups\restic-offsite"
 $env:RESTIC_PASSWORD_FILE = 'C:\Backups\keys\offsite.pass'   # or leave this out and type the password from my vault
 & $R snapshots --group-by host,tags
-& $R restore latest --tag vaultwarden --target C:\Temp\restore
+& $R restore latest --tag plan:vaultwarden --target C:\Temp\restore
 ```
 
 Then copy the restored files to a rebuilt server and follow Scenarios B, C and C2. If the PC is gone too, sign in to iCloud on any computer, let the folder download, install restic and point it at that folder.
@@ -316,6 +330,9 @@ Then copy the restored files to a rebuilt server and follow Scenarios B, C and C
 | `restic` not found from the scheduled task | winget installed restic but didn't create its usual command shortcut | The script finds the newest `restic_*.exe` in winget's package folder, which also survives restic upgrades |
 | *Access is denied* registering the task to run while signed out | That mode (S4U) needs an elevated prompt | Registered it to run while I'm signed in. The PC never sleeps, and a missed run catches up later. |
 | The PC re-copied 6 old snapshots on its second run | Its daily cleanup forgot snapshots the NAS still had (the NAS prunes weekly), so `restic copy` saw them as missing | Moved the PC's forget/prune/check to Sundays only |
+| **A small website's backup step never ran** (found 2026-11-10) | Written and dry-run tested on 2026-11-07, staged in my home folder, never installed. The same mistake as Authentik ten days earlier. | Became its own [Backrest](backrest.md) plan; the first snapshot appeared on the dashboard the same day. The real fix is the dashboard: a plan that never ran now shows up as an empty row instead of hiding. |
+| My first Backrest schedule put Immich at 01:30 | That's *before* Immich's own 02:00 database dump, so each snapshot would carry the previous night's dump | Moved the Immich plan to 02:30. The old 03:30 time was chosen for exactly this reason, which is why it's written down here. |
+| Backrest pairing showed **Disconnected** | A race in Backrest's experimental multihost sync | Authorized the laptop by its key ID instead ([details](backrest.md#troubleshooting-log)) |
 
 ## Roadmap to full 3-2-1
 
@@ -327,6 +344,8 @@ Then copy the restored files to a rebuilt server and follow Scenarios B, C and C
 - [x] **Back up Authentik** ✅ *Done 2026-10-30:* database dump plus `.env`, certs and templates, verified readable
 - [x] **One year of history** ✅ *Done 2026-10-30:* retention raised to 12 monthly on every copy
 - [x] **Back up ShineoriServer too** ✅ *Done:* nightly, encrypted, append-only backups to the NAS, with a tested restore ([above](#shineoriserver-backups-append-only))
-- [ ] **Dead-man's switch:** an Uptime Kuma push monitor that alerts if a night's backup *doesn't run at all* (the Discord trap only catches runs that start and then fail)
+- [x] **One dashboard for every backup** ✅ *Done 2026-11-10:* [Backrest](backrest.md) schedules, prunes, checks and restores both servers' backups from one page
+- [ ] **Retire the old cron scripts** after a clean parallel week, and delete them after a clean month
+- [ ] **Dead-man's switch:** Backrest's dashboard now flags overdue backups, but nothing alerts me if Backrest itself stops. An Uptime Kuma push monitor would cover that.
 - [x] **Add Paperless** ✅ *Done 2026-10-28:* it moved to ShineoriServer, so it joined the laptop's nightly append-only backup. Paperless uses SQLite, so it's paused for a few seconds like the other small apps, and its whole folder (`data/`, `media/`, compose file) is backed up.
 - [ ] Quarterly restore drill, including a full reload of the Dawarich and Authentik databases into test containers, and a restore from the PC copy
