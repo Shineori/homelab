@@ -100,9 +100,19 @@ After adding it (edited on the host, copied into the manager, ownership fixed, m
 | I can hunt, filter and triage alerts by source and rule | Detection of a stealthy, slow attack (this one was fast and loud) |
 | I can write a detection rule mapped to MITRE ATT&CK | Network-layer reconnaissance (the host agent missed the scan) |
 
+## Update: port-scan gap closed (Suricata)
+
+After this report, I added [Suricata](suricata.md), a network IDS, on the NAS and fed its alerts into Wazuh. Re-running the same scan:
+
+- The scan is now detected **two ways**: the built-in **ET SCAN "Nmap User-Agent"** rule (it spots Nmap by the User-Agent in its HTTP probes) and my own **custom SYN-threshold rule** (30+ SYNs from one source in 60 seconds), which also catches a quiet scan that never touches HTTP.
+- A surprise worth recording: the default ET SCAN **network-pattern** rules stayed silent, because they only watch external→internal traffic and my Kali sits inside the LAN. The content rule and my behaviour rule are what caught it.
+- Suricata on a Docker host also floods "Ethertype unknown" decoder noise; I muted just that signature with a Wazuh rule so real alerts aren't buried.
+
+So the finding above ("host-based detection misses network recon") now has its fix in place and tested.
+
 ## What I'd harden next
 
-- [ ] Add Suricata (network IDS) into Wazuh, so port scans and other network recon are detected
+- [x] Add Suricata (network IDS) into Wazuh, so port scans and other network recon are detected (done 2026-11-16, see [Suricata](suricata.md))
 - [ ] Tighten SSH prevention: key-only auth, or fail2ban / NAS auto-block for repeated failures
 - [ ] Add a Wazuh active response to auto-block a source after repeated brute-force hits, then re-test and document the before/after
 - [ ] Run a slower, quieter brute force to see whether it stays under the 5712 correlation threshold, and tune if needed

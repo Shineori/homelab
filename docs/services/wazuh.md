@@ -115,7 +115,7 @@ My audit rules are locked (`-e 2`), so the goal was to change nothing on the aud
 - [ ] Give the dashboard a certificate my browser trusts instead of clicking past the warning
 - [ ] Find out why the NAS's package system is inconsistent, in its own careful session
 - [x] Attack my own NAS from Kali, hunt the alerts, write a custom rule mapped to MITRE ATT&CK, and write it up (done 2026-11-16, see [Wazuh detection validation](wazuh-detection-validation.md))
-- [ ] Add Suricata network IDS into Wazuh, to catch the port-scan recon the host agent missed
+- [x] Add Suricata network IDS into Wazuh, to catch the port-scan recon the host agent missed (done 2026-11-16, see [Suricata](suricata.md))
 
 ## What I learned
 

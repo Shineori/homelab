@@ -41,6 +41,7 @@ nav:
           - "auditd + Discord alerts": services/security-monitoring.md
           - "Wazuh SIEM lab": services/wazuh.md
           - "Wazuh detection validation": services/wazuh-detection-validation.md
+          - "Suricata (network IDS)": services/suricata.md
           - "addy.io": services/addy.md
       - Networking & monitoring:
           - "Cloudflare Tunnel": services/cloudflared.md

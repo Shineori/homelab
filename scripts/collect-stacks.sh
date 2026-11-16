@@ -29,6 +29,7 @@ MAP=(
   nas:audiobookshelf:AudioBookShelf  nas:flowcase:Flowcase
   nas:terraria:terraria  nas:resume-site:sites/resume-site  nas:diun:diun  nas:restic-server:restic-server
   nas:homepage-agent:homepage-agent/shinas-agent  nas:dozzle-agent:dozzle-agent
+  nas:suricata:suricata
   # ShineoriServer: RAM-hungry apps with small data (moved off the NAS)
   laptop:immich-ml:immich-ml  laptop:uptime-kuma:uptime-kuma
   laptop:dawarich:dawarich  laptop:karakeep:karakeep  laptop:ghiro:ghiro-docker
