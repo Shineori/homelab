@@ -52,9 +52,9 @@ The default `nimble` build is 9.5 GB, which is bigger than the GPU's 6 GB of VRA
 
 1. Upgrade Ollama to 0.40.4+ on ShineoriServer: `curl -fsSL https://ollama.com/install.sh | sh` (my port and keep-alive settings live in `override.conf`, which the installer leaves alone)
 2. Pull the model: `OLLAMA_HOST=<SERVER_LAN_IP>:11432 ollama pull nimble`
-3. On the PC, clone [decision-bridge-nimble-mcp](https://github.com/poacosta/decision-bridge-nimble-mcp) and run `uv tool install .`
+3. On the PC, install [decision-bridge-nimble-mcp](https://github.com/poacosta/decision-bridge-nimble-mcp) pinned to a commit: `uv tool install --python 3.13 "git+https://github.com/poacosta/decision-bridge-nimble-mcp@<commit>"`
 4. Check it: `decision-bridge doctor --smoke-test` with `DECISION_BRIDGE_OLLAMA_URL` and `DECISION_BRIDGE_ALLOW_REMOTE` set
-5. Install the MCP client for Ollama: `uv tool install --upgrade ollmcp`
+5. Install the MCP client for Ollama: `uv tool install --python 3.13 ollmcp`
 6. Add the bridge to a `servers.json` file (same `mcpServers` format other MCP clients use):
 
 ```json
@@ -79,7 +79,10 @@ The default `nimble` build is 9.5 GB, which is bigger than the GPU's 6 GB of VRA
 ollmcp --host http://<SERVER_LAN_IP>:11432 --model <tool-calling-model> --servers-json servers.json
 ```
 
-   The chat model then sees two tools: `decide` and `bridge_status`
+   The chat model then sees two tools: `decide` and `bridge_status`. I use `gemma4:e2b-it-qat` as the chat model: it's small enough to swap in and out next to Nimble on a 6 GB GPU.
+8. Give the chat model a system prompt with one full example of a `decide` call (each question needs `"type"`, `"instructions"` and `"criteria"`). Small models need it; without it they send plain strings and the bridge rejects them
+
+**ollmcp test (2026-11-16):** Gemma 4 2B read the same kind of Immich breaking-migration notes, called `decide`, got Nimble's answer `risky` (99.76%) back in about 18 seconds (including loading Nimble), and explained it in plain words. The whole round trip took about 50 seconds because Ollama swaps the two models on the GPU.
 
 **First test:** fed it Immich release notes with a breaking database migration. It answered `risky` (99.4%), backup needed (99.99%) and effort "Major" (1.98 out of 2), in about 1.7 seconds once warm.
 
@@ -89,12 +92,18 @@ ollmcp --host http://<SERVER_LAN_IP>:11432 --model <tool-calling-model> --server
 |---|---|---|---|
 | 2026-10-27 | `ollama pull nimble` failed | Nimble requires Ollama 0.40.4+ and the server had 0.40.3 | Upgraded Ollama with the official install script (now 0.40.11) |
 | 2026-10-27 | The first decision request timed out after 55 seconds | Cold start: loading a 9.5 GB model that only partly fits in VRAM | Waited for it to finish loading. Warm requests take about 2 to 3 seconds. Raised the bridge timeout to 180 seconds |
+| 2026-11-16 | `ollmcp` crashed with `NoConsoleScreenBufferError` | It's a full-screen terminal app and needs a real Windows console; my remote shell wasn't one | Run it in Windows Terminal. For scripted tests I used ollmcp's own Python libraries instead |
+| 2026-11-16 | Tools I installed "disappeared" from my normal terminal | The remote shell I used runs inside a Microsoft Store (MSIX) app's sandbox, so anything written to AppData was redirected into that app's private folder | Set `UV_TOOL_DIR`, `UV_TOOL_BIN_DIR`, `UV_PYTHON_INSTALL_DIR` and `UV_CACHE_DIR` to folders under `C:\Users\<me>\.local` and `.cache`, then reinstalled |
+| 2026-11-16 | `uv` couldn't set up Python 3.15 (`Missing expected target directory for Python minor version link`) | A half-finished Python install in the redirected folder | Pinned the tools to Python 3.13 |
+| 2026-11-16 | The chat model's `decide` calls were rejected (`Input should be a valid dictionary`, then `Unable to extract tag using discriminator 'type'`) | The tool's input is nested and a 2B model doesn't follow it from the schema alone | Added a system prompt with a full example call; it then got Nimble's answer on its second try |
+| 2026-11-16 | Gemma 4 12B took over 15 minutes and kept running after I cancelled | About 4 tokens a second on the laptop with long "thinking"; Ollama kept generating for the closed request | Restarted Ollama (`sudo systemctl restart ollama`) and stuck with the 2B model |
 | 2026-10-27 | Risk of a broken `servers.json` after editing it with PowerShell | Windows PowerShell's `Set-Content -Encoding utf8` adds a hidden BOM byte that some JSON parsers reject | Rewrote the file as UTF-8 without a BOM and confirmed it starts with `{` |
 
 ## What I'd harden next
 
 - [ ] Try a smaller quantized build of Nimble that fits fully in the 6 GB of VRAM, and compare speed and accuracy
-- [ ] Pin the bridge to a specific commit instead of whatever `main` was when I cloned it
+- [x] **Pinned the bridge to a specific commit** ✅ *Done 2026-11-16:* installed from `git+...@<commit>` instead of whatever `main` was
+- [ ] Find a local chat model that follows the `decide` format on the first try, so it doesn't need a retry
 - [ ] Bind Ollama to the LAN interface only instead of `0.0.0.0`
 - [ ] Build a small test set of my own (past update notes I already judged) to pick confidence thresholds, since the model's confidence isn't a guarantee
 - [ ] Hook it into my weekly update check so every container gets a 🟢/🟡/🔴 verdict from Nimble
@@ -104,4 +113,7 @@ ollmcp --host http://<SERVER_LAN_IP>:11432 --model <tool-calling-model> --server
 - **System One vs System Two models:** decision models return numbers in one pass, while chat models write text token by token. Each is the right tool for different jobs
 - **Quantization and VRAM:** a 9B model at Q8_0 is about 9.5 GB, so it won't fit in 6 GB and gets split across CPU and GPU
 - **MCP over stdio:** the MCP client (ollmcp) starts the bridge as a local program and talks to it through standard input and output, so there's no extra port to open
+- **Ollama doesn't run MCP servers itself:** a client like ollmcp sits in between, chatting with a model on Ollama and launching the tools for it
+- **Small models need examples, not just schemas:** the 2B model only built a correct nested tool call after seeing one, and the bridge's strict validation stopped its bad attempts before they reached Nimble
+- **Sandboxed apps redirect AppData:** a Microsoft Store app's child processes write AppData into the app's own folder, so installs made there are invisible to the rest of Windows
 - **Reading code before running it:** a quick search for network calls and shell commands is a cheap check before trusting a small project
