@@ -62,10 +62,11 @@ One container and one folder is about as simple as a self-hosted app gets, which
 | Date | Problem | Root cause | Fix |
 |---|---|---|---|
 | 2026-11-16 | No problems during setup | | |
+| 2026-11-16 | Adding it to the backup needed root, but my sudo needs a password | The Backrest config and hook scripts are root-only on purpose | Staged one script that backs up each file, makes the edits and restarts Backrest; dry-ran it on copies, then ran it with sudo myself. First snapshot with Memos: `6ac0a4bb`, and Memos was back up within seconds |
 
 ## What I'd harden next
 
-- [ ] **Add it to the laptop's nightly backup** ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only)): the `./data` folder plus the compose file. Right now it isn't backed up at all.
+- [x] **Backed up** ✅. *Done 2026-11-16:* the whole `~/docker/memos` folder is in the laptop's nightly Backrest plan, with Memos paused for a few seconds so the SQLite copy is consistent ([Backups](../infrastructure/backups.md#shineoriserver-backups-append-only))
 - [ ] Turn off new user sign-ups in the admin settings, since I'm the only user
 - [ ] Look into putting [Cloudflare Access](cloudflared.md) in front of the login while leaving share links open
 - [ ] Log in through [Authentik](authentik.md) (Memos supports SSO)
@@ -76,4 +77,4 @@ One container and one folder is about as simple as a self-hosted app gets, which
 - **Access mode depends on one setting:** without an instance URL, newer Memos versions lock themselves into private mode. The URL also decides what address the share links contain.
 - **Tailscale vs public is a real tradeoff:** Tailscale is safer, but some features (sharing with people outside my network) only work with a public address
 - **A share link is a bearer token:** anyone holding it can read the memo until it expires or I revoke it, so expiry and revoking are my main controls
-- **Simple stacks are easy to back up:** the whole app lives in one folder, so a backup is just that folder (once I actually add it)
+- **Simple stacks are easy to back up:** the whole app lives in one folder, so a backup is just that folder. Its SQLite database runs in WAL mode (a `-wal` file next to the database), so I pause the container during the snapshot instead of copying it live
