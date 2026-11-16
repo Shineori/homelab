@@ -1,6 +1,6 @@
 # Basic Memory (shared AI memory)
 
-> A Markdown knowledge base that my AI assistants share, served as a remote MCP server behind Authentik
+> A Markdown knowledge base that my local AI shares, served as a remote MCP server behind Authentik
 
 | | |
 |---|---|

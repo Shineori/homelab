@@ -62,6 +62,7 @@ nav:
           - "Ghiro": services/ghiro.md
           - "Paperless-ngx": services/paperless.md
           - "Karakeep": services/karakeep.md
+          - "Excalidraw": services/excalidraw.md
           - "Gmail Cleaner": services/gmail-cleaner.md
           - "NextExplorer": services/nextexplorer.md
           - "MailFlow": services/mailflow.md

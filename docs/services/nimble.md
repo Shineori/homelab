@@ -1,6 +1,6 @@
 # Nimble decision model + Decision Bridge
 
-> A local "System One" model that gives Claude fast, typed yes/no, choice and score answers with probabilities
+> A local "System One" model that gives local AI fast, typed yes/no, choice and score answers with probabilities
 
 | | |
 |---|---|

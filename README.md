@@ -90,6 +90,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Ghiro](docs/services/ghiro.md) | ShineoriServer | ⏸️ | Image forensics web app |
 | [Paperless-ngx](docs/services/paperless.md) | ShineoriServer | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](docs/services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
+| [Excalidraw](docs/services/excalidraw.md) | ShineoriServer | 🟢 | Whiteboard with live collaboration, fully self-hosted (no Firebase) |
 | [Gmail Cleaner](docs/services/gmail-cleaner.md) | ShineoriServer | 🟡 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
 | [NextExplorer](docs/services/nextexplorer.md) | ShineoriServer | ⏸️ | Web file explorer across the laptop and the NAS (LAN only) |
 | [MailFlow](docs/services/mailflow.md) | ShineoriServer | 🟢 | Unified webmail for all my accounts, audited and hardened (LAN only) |
@@ -108,8 +109,8 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | Service | Host | Status | What it does |
 |---|---|---|---|
 | [Ollama + Open WebUI + SearXNG](docs/services/ollama-stack.md) | ShineoriServer | 🟢 | Local LLM stack with private web search |
-| [Nimble + Decision Bridge](docs/services/nimble.md) | ShineoriServer + Windows PC | 🟢 | Local decision model that gives Claude typed yes/no, choice and score answers |
-| [Basic Memory](docs/services/basic-memory.md) | ShineoriServer | 🟢 | Shared Markdown memory for my AI assistants, as a remote MCP server behind Authentik |
+| [Nimble + Decision Bridge](docs/services/nimble.md) | ShineoriServer + Windows PC | 🟢 | Local decision model that gives local AI typed yes/no, choice and score answers |
+| [Basic Memory](docs/services/basic-memory.md) | ShineoriServer | 🟢 | Shared Markdown memory for local AI, as a remote MCP server behind Authentik |
 | [Hermes Agent](docs/services/hermes-agent.md) | ShineoriServer | ⚫ | Local AI agent that reads release notes and posts update verdicts in Discord, behind layered guardrails |
 
 ### Security labs

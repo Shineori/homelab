@@ -1,0 +1,67 @@
+# Excalidraw with live collaboration, fully self-hosted (no Firebase, no public collab server)
+# frontend: kitsteam/excalidraw v0.28.0 built locally (its URLs are baked in at build time)
+# room + storage: kitsteam prebuilt images; Postgres keeps the encrypted rooms, scenes and images
+# Build context ./src is a clone of kitsteam/excalidraw with ./shineori copied in (see README.md)
+services:
+  excalidraw:
+    build:
+      context: ./src
+      dockerfile: shineori/Dockerfile
+    image: shineori/excalidraw:0.28.0
+    container_name: excalidraw
+    restart: unless-stopped
+    ports:
+      - "${BIND_IP}:3025:8080"   # LAN IP only; the tunnel points here
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - excalidraw-room
+      - excalidraw-storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  excalidraw-room:
+    image: ghcr.io/kitsteam/excalidraw-room:v0.2.5@sha256:b5937cea45a528052d078176a39aee97554fc796ee3d5b2b4d05e24c31642594
+    container_name: excalidraw-room
+    restart: unless-stopped
+    environment:
+      PORT: 8090                     # runs as "nobody", so it can't bind port 80
+      CORS_ORIGIN: ${PUBLIC_URL}
+    security_opt:
+      - no-new-privileges:true
+
+  excalidraw-storage:
+    image: ghcr.io/kitsteam/excalidraw-storage-backend:v0.2.5@sha256:fe407bb2db42fe40bca08ad974c64fa59674d5bafa6bdf65d21963609076257f
+    container_name: excalidraw-storage
+    restart: unless-stopped
+    environment:
+      STORAGE_URI: postgresql://excalidraw:${POSTGRES_PASSWORD}@excalidraw-db:5432/excalidraw
+      STORAGE_TTL: ${STORAGE_TTL}          # ms; 90 days, refreshed every time a room is opened
+      ENABLE_POSTGRES_TOUCH: "true"
+      ENABLE_POSTGRES_TTL_SERVICE: "true"
+    depends_on:
+      - excalidraw-db
+    security_opt:
+      - no-new-privileges:true
+
+  excalidraw-db:
+    image: postgres:17.7-alpine@sha256:bb377b7239d2774ac8cc76f481596ce96c5a6b5e9d141f6d0a0ee371a6e7c0f2
+    container_name: excalidraw-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: excalidraw
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: excalidraw
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U excalidraw -d excalidraw"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
