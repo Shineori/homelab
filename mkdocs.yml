@@ -40,6 +40,7 @@ nav:
           - "Vaultwarden": services/vaultwarden.md
           - "auditd + Discord alerts": services/security-monitoring.md
           - "Wazuh SIEM lab": services/wazuh.md
+          - "Wazuh detection validation": services/wazuh-detection-validation.md
           - "addy.io": services/addy.md
       - Networking & monitoring:
           - "Cloudflare Tunnel": services/cloudflared.md

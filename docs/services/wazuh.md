@@ -6,13 +6,13 @@
 |---|---|
 | **Host** | ShineoriServer (server stack), ShiNAS and Windows PC (agents) |
 | **Category** | Security & identity |
-| **Status** | 🟡 in progress <!-- 🟢 running / 🔵 planned / ⚫ retired --> |
+| **Status** | 🟢 running <!-- 🟡 in progress / 🔵 planned / ⚫ retired --> |
 | **Exposed?** | LAN and Tailscale only. No public route, on purpose |
 | **Ports** | 5601 (dashboard), 1514 and 1515 (agents), 55000 (manager API), 9200 (indexer API), 514/udp (syslog) |
 
 Stack notes: [`stacks/wazuh/`](https://github.com/shineori/homelab/tree/main/stacks/wazuh)
 
-> 🧭 **Where this is at (2026-11-16):** the server stack is up, all three default passwords are changed, two agents (the NAS and my Windows PC) are enrolled and showing as active, and my existing [auditd](security-monitoring.md) events from the NAS now arrive as Wazuh alerts. Still to do: attack my own lab, find the alerts, and write detection rules and incident reports. I only claim a skill here once the matching step is actually done.
+> 🧭 **Where this is at (2026-11-16):** the server stack is up, all three default passwords are changed, two agents (the NAS and my Windows PC) are enrolled and active, and my existing [auditd](security-monitoring.md) events from the NAS arrive as Wazuh alerts. I then attacked my own NAS from a Kali VM, hunted the alerts, and wrote a custom detection rule mapped to MITRE ATT&CK. Full write-up: [Wazuh detection validation](wazuh-detection-validation.md). Optional next: Suricata network IDS, which the port scan proved I need. I only claim a skill here once the matching step is actually done.
 
 ## Why I run it
 
@@ -114,7 +114,8 @@ My audit rules are locked (`-e 2`), so the goal was to change nothing on the aud
 - [ ] Add the Wazuh config and certificates to the nightly backup
 - [ ] Give the dashboard a certificate my browser trusts instead of clicking past the warning
 - [ ] Find out why the NAS's package system is inconsistent, in its own careful session
-- [ ] Planned lab work: scan and brute-force my own lab from Kali, find the alerts, write a custom detection rule mapped to MITRE ATT&CK, and write a short incident report per attack
+- [x] Attack my own NAS from Kali, hunt the alerts, write a custom rule mapped to MITRE ATT&CK, and write it up (done 2026-11-16, see [Wazuh detection validation](wazuh-detection-validation.md))
+- [ ] Add Suricata network IDS into Wazuh, to catch the port-scan recon the host agent missed
 
 ## What I learned
 
@@ -126,3 +127,4 @@ My audit rules are locked (`-e 2`), so the goal was to change nothing on the aud
 - **Service accounts break things quietly.** Nobody types the `kibanaserver` password, so a mismatch shows up as "the app is down", not "wrong password"
 - **`apt` plans, `dpkg` installs.** When the planner is stuck on unrelated problems, installing one well-understood package directly can be the safer move than a system-wide "fix"
 - **Version rules matter between parts:** the manager has to be the same version as its agents or newer
+- **Detection is only proven by attacking it.** I only trusted the SIEM after I ran real attacks against my own NAS and watched it respond. The full exercise is in [Wazuh detection validation](wazuh-detection-validation.md)

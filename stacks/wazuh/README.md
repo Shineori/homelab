@@ -16,3 +16,7 @@ To rebuild it:
 6. Change the three default passwords before adding any agent (steps in the docs page)
 
 My only change to the upstream files, besides the passwords, is that one port line.
+
+## Custom detection rule
+
+My custom rules live inside the manager at `/var/ossec/etc/rules/local_rules.xml` (a Docker volume, so they survive restarts). The first one, rule `100100`, builds on the built-in brute-force rule `5712` and tags it with MITRE ATT&CK T1110. The reasoning and the full rule are in [docs/services/wazuh-detection-validation.md](../../docs/services/wazuh-detection-validation.md).
