@@ -65,6 +65,8 @@ flowchart LR
 5. Add the tunnel route to `http://<LAN_IP>:3015`. Cloudflare passes WebSockets through by default, and the editor needs them.
 6. `APP_URL` has to match the address I actually use. When I moved from the LAN address to the domain, I changed it and ran `docker compose up -d --force-recreate docmost`.
 
+Backups: the nightly ShineoriServer restic job takes a `pg_dump` of the database while Docmost keeps running, checks that the dump is readable, then backs up the dump plus the stack folder (`.env` and uploaded files). The raw Postgres and Redis folders are skipped, because a live copy of database files isn't safe to restore and the dump replaces it. The `.env` matters: without the same `APP_SECRET`, a restored install can't use its old data properly.
+
 Upgrades: read the release notes, back up the database, change the image tag, then `docker compose pull docmost && docker compose up -d docmost`.
 
 ## Troubleshooting log
@@ -76,7 +78,7 @@ Upgrades: read the release notes, back up the database, change the image tag, th
 
 ## What I'd harden next
 
-- [ ] Add `~/docker/docmost` to the nightly ShineoriServer backup, with a `pg_dump` first so the database copy is consistent
+- [ ] Do a test restore of the Docmost dump into a throwaway Postgres container, so I know the backup actually comes back
 - [ ] Add an Uptime Kuma monitor on `/api/health` and a Homepage tile
 - [ ] Set up SMTP through my homelab mail sender so invites and password resets work
 - [ ] Pin Postgres and Redis to exact versions like the rest of my stacks

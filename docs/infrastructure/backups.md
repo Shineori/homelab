@@ -189,7 +189,7 @@ flowchart LR
     cron([Backrest plan apps<br/>laptop, nightly]) --> s[laptop-hooks.sh pre]
     s --> d[Dawarich<br/>pg_dump + pg_restore --list]
     s --> a[addy.io<br/>mariadb-dump --single-transaction]
-    s --> p[Uptime Kuma, Karakeep, Paperless<br/>paused ~3 s for a consistent copy]
+    s --> p[Uptime Kuma, Karakeep, Paperless, Memos<br/>paused ~3 s for a consistent copy]
     s --> w[sites<br/>small self-hosted site + its data]
     d --> r[restic<br/>encrypts on the laptop]
     a --> r
@@ -205,7 +205,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), addy.io (database dump + its folder: config, app key and DKIM key; added 2026-10-30), `~/docker/sites` (a small Node site and its JSON data file; added 2026-10-30), Dozzle (login and agent certificate; added 2026-11-05), Omada Controller auto backup files (added 2026-11-05), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
+| **What** | Dawarich (database dump + its files), Karakeep (`data` volume), Uptime Kuma, Paperless (documents, database and search index), addy.io (database dump + its folder: config, app key and DKIM key; added 2026-10-30), `~/docker/sites` (a small Node site and its JSON data file; added 2026-10-30), Dozzle (login and agent certificate; added 2026-11-05), Omada Controller auto backup files (added 2026-11-05), Docmost (database dump + uploaded files and `.env`; added 2026-11-16), Memos (SQLite database and attachments, paused for the snapshot; added 2026-11-16), plus each app's compose file and `.env`. Homarr was included until it was retired on 2026-10-28. |
 | **Not included** | Karakeep's search index (rebuildable), AI models (re-downloadable), the Minecraft world (it has [its own daily backup](minecraft-backups.md); I briefly added it here too, then took it back out the same day because one Minecraft backup process is plenty) |
 | **Schedule** | Run by [Backrest](backrest.md) since 2026-11-10: the laptop's `apps` plan nightly at 03:15 UTC (the laptop's clock is UTC), the NAS's forget + prune Sundays 06:30 and a 5% check Wednesdays. The old crons (04:15 laptop, Sundays 05:00 NAS) run in parallel until the cutover. |
 | **Scripts** | Hooks: [`laptop-hooks.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-hooks.sh) (dumps and the short app pause) and the `laptop-forget` step in [`shinas-hooks.sh`](https://github.com/shineori/homelab/blob/main/scripts/shinas-hooks.sh). Retiring: [`laptop-backup.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup.sh), [`laptop-backup-prune.sh`](https://github.com/shineori/homelab/blob/main/scripts/laptop-backup-prune.sh) |

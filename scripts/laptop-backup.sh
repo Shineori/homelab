@@ -8,7 +8,7 @@ export RESTIC_PASSWORD_FILE=/root/.restic-password      # encryption password (c
 DOCKER=/home/shineori/docker
 VOL=/var/lib/docker/volumes
 STAGE=/var/backups/homelab-staging
-PAUSE=(uptime-kuma karakeep-web-1 paperless)            # SQLite apps: stopped for a few seconds = consistent copy
+PAUSE=(uptime-kuma karakeep-web-1 paperless memos)            # SQLite apps: stopped for a few seconds = consistent copy
 log() { echo "$(date '+%F %T') $*"; }
 
 notify() {  # Discord alert; webhook read from a root-only file and passed via stdin (never in argv)
@@ -36,6 +36,11 @@ docker exec addy-db sh -c 'exec mariadb-dump --single-transaction --routines -u 
 tail -n 1 "$STAGE/addy.sql" | grep -q 'Dump completed'
 log "addy dump: $(du -h "$STAGE/addy.sql" | cut -f1), complete"
 
+# 2b) Docmost: consistent PostgreSQL dump while it keeps running, then sanity-check it
+docker exec docmost-db pg_dump -U docmost -Fc docmost > "$STAGE/docmost.dump"
+docker exec -i docmost-db pg_restore --list < "$STAGE/docmost.dump" > /dev/null
+log "docmost dump: $(du -h "$STAGE/docmost.dump" | cut -f1), readable"
+
 # 3) Pause the SQLite apps, back everything up, start them again (EXIT trap guarantees the restart)
 docker stop "${PAUSE[@]}" > /dev/null
 log "paused: ${PAUSE[*]}"
@@ -49,6 +54,8 @@ restic backup --host shineoriserver --tag apps \
   "$DOCKER/addy" --exclude "$DOCKER/addy/db" --exclude "$DOCKER/addy/redis" \
   "$DOCKER/sites" \
   "$DOCKER/dozzle" \
+  "$DOCKER/memos" \
+  "$DOCKER/docmost" --exclude "$DOCKER/docmost/data/postgres" --exclude "$DOCKER/docmost/data/redis" \
   "$DOCKER/omada/omada-data/autobackup"
 restart_apps
 log "restarted: ${PAUSE[*]}"

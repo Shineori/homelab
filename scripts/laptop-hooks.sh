@@ -10,7 +10,7 @@ set -Eeuo pipefail
 # Installed at /usr/local/lib/backrest-hooks/laptop-hooks.sh (root, chmod 700). See docs/infrastructure/backrest.md
 export PATH=/usr/local/bin:/usr/bin:/bin
 STAGE=/var/backups/homelab-staging
-PAUSE=(uptime-kuma karakeep-web-1 paperless)   # SQLite apps: stopped for the snapshot = consistent copy
+PAUSE=(uptime-kuma karakeep-web-1 paperless memos)   # SQLite apps: stopped for the snapshot = consistent copy
 log() { echo "$(date '+%F %T') [laptop-hooks] $*"; }
 restart_apps() { docker start "${PAUSE[@]}" >/dev/null 2>&1 || true; }
 
@@ -28,6 +28,11 @@ pre() {
   docker exec addy-db sh -c 'exec mariadb-dump --single-transaction --routines -u anonaddy -p"$MARIADB_PASSWORD" anonaddy' > "$STAGE/addy.sql"
   tail -n 1 "$STAGE/addy.sql" | grep -q 'Dump completed'
   log "addy dump: $(du -h "$STAGE/addy.sql" | cut -f1), complete"
+
+  # Docmost: consistent PostgreSQL dump while it keeps running, then sanity-check it
+  docker exec docmost-db pg_dump -U docmost -Fc docmost > "$STAGE/docmost.dump"
+  docker exec -i docmost-db pg_restore --list < "$STAGE/docmost.dump" > /dev/null
+  log "docmost dump: $(du -h "$STAGE/docmost.dump" | cut -f1), readable"
 
   # Pause the SQLite apps last, so they're down only while restic reads
   docker stop "${PAUSE[@]}" > /dev/null

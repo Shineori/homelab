@@ -54,6 +54,7 @@ Keeping them separate means each tunnel has its own token and its own routes, an
 | Dawarich | ShineoriServer | Cloudflare Access on the website, API key on `/api`, then app login with optional Authentik SSO |
 | Audiobookshelf | ShiNAS | App login. Stays public so I can share audiobooks with friends |
 | [Dozzle](dozzle.md) | ShineoriServer | Cloudflare Access and Authentik, then the Dozzle login (added 2026-11-05) |
+| [Docmost](docmost.md) | ShineoriServer | Docmost's own login, invite-only, no Access gate so I can share pages (added 2026-11-16) |
 | Open WebUI | ShineoriServer | App login (usually spun down) |
 | [addy.io](addy.md) web UI (tunnel 2) | ShineoriServer | 🔐 **Cloudflare Access → Authentik passkey**, then the addy login (added 2026-10-30). Its `/api` path has a separate Bypass rule, because the browser extension and app use API tokens. |
 | *Any other hostname* | n/a | **Catch-all rule returns 404**, so nothing unlisted is reachable |
