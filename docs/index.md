@@ -55,7 +55,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Authentik](services/authentik.md) | ShiNAS | 🟢 | Single sign-on and identity provider for the lab |
 | [Vaultwarden](services/vaultwarden.md) | ShiNAS | 🟢 | Self-hosted Bitwarden server for passwords, TOTP and passkeys |
 | [auditd + Discord alerts](services/security-monitoring.md) | ShiNAS | 🟢 | Host-level audit logging with real-time Discord webhook alerts |
-| [Wazuh SIEM lab](services/wazuh.md) | ShineoriServer + ShiNAS agent | 🟡 | SIEM: collects logs from my machines, matches detection rules, shows alerts for triage |
+| [Wazuh SIEM lab](services/wazuh.md) | ShineoriServer + agents on ShiNAS and Windows PC | 🟡 | SIEM: collects logs from my machines, matches detection rules, shows alerts for triage |
 | [addy.io](services/addy.md) | ShineoriServer | 🟢 | Anonymous email aliases on my own domain, forwarded to my real inbox |
 
 ### Networking & monitoring

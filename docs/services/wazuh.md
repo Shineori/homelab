@@ -4,7 +4,7 @@
 
 | | |
 |---|---|
-| **Host** | ShineoriServer (server stack), ShiNAS (first agent) |
+| **Host** | ShineoriServer (server stack), ShiNAS and Windows PC (agents) |
 | **Category** | Security & identity |
 | **Status** | 🟡 in progress <!-- 🟢 running / 🔵 planned / ⚫ retired --> |
 | **Exposed?** | LAN and Tailscale only. No public route, on purpose |
@@ -12,7 +12,7 @@
 
 Stack notes: [`stacks/wazuh/`](https://github.com/shineori/homelab/tree/main/stacks/wazuh)
 
-> 🧭 **Where this is at (2026-11-16):** the server stack is up, all three default passwords are changed, and the first agent (the NAS) is installed and enrolled. Still to do: confirm that agent shows as active, add my Windows PC, feed in my existing [auditd](security-monitoring.md) logs, then attack my own lab and write detection rules and incident reports. I only claim a skill here once the matching step is actually done.
+> 🧭 **Where this is at (2026-11-16):** the server stack is up, all three default passwords are changed, and two agents (the NAS and my Windows PC) are enrolled and showing as active. Still to do: feed in my existing [auditd](security-monitoring.md) logs, then attack my own lab and write detection rules and incident reports. I only claim a skill here once the matching step is actually done.
 
 ## Why I run it
 
@@ -34,7 +34,7 @@ flowchart LR
     end
     nas[Agent on ShiNAS] -- logs, port 1514 --> m
     nas -. enrolls once, port 1515 .-> m
-    pc[Agent on Windows PC<br/>planned] -.-> m
+    pc[Agent on Windows PC] -- logs, port 1514 --> m
     me([Me, on the LAN or Tailscale]) --> d
 ```
 
@@ -95,8 +95,8 @@ The journey of one log: something happens on the NAS, the agent ships it, the ma
 
 ## What I'd harden next
 
-- [ ] Confirm the NAS agent shows as active and that its events reach the dashboard
-- [ ] Add the Windows PC as a second agent
+- [x] Confirm the NAS agent shows as active (done 2026-11-16)
+- [x] Add the Windows PC as a second agent (done 2026-11-16, I set this one up on my own)
 - [ ] Feed my existing [auditd](security-monitoring.md) log into Wazuh, so those kernel-level events get rules and history too
 - [ ] Move the passwords out of the compose file into a `.env` file or Docker secrets
 - [ ] Stop publishing the indexer API (9200) and manager API (55000) on every address. Agents only need 1514 and 1515
