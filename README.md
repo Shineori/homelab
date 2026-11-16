@@ -90,6 +90,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Ghiro](docs/services/ghiro.md) | ShineoriServer | ⏸️ | Image forensics web app |
 | [Paperless-ngx](docs/services/paperless.md) | ShineoriServer | 🟢 | Scans, OCRs and organizes documents so they're searchable |
 | [Karakeep](docs/services/karakeep.md) | ShineoriServer | 🟢 | Self-hosted bookmark and read-it-later manager |
+| [Memos](docs/services/memos.md) | ShineoriServer | 🟢 | Lightweight notes timeline, with expiring share links for single memos |
 | [Excalidraw](docs/services/excalidraw.md) | ShineoriServer | 🟢 | Whiteboard with live collaboration, fully self-hosted (no Firebase) |
 | [Gmail Cleaner](docs/services/gmail-cleaner.md) | ShineoriServer | 🟡 | Bulk Gmail cleanup (my fork: protected senders, previews, undo, Access gate) |
 | [NextExplorer](docs/services/nextexplorer.md) | ShineoriServer | ⏸️ | Web file explorer across the laptop and the NAS (LAN only) |

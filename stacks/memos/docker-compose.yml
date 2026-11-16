@@ -1,0 +1,15 @@
+services:
+  memos:
+    image: neosmemo/memos:0.31.0   # pinned, update by hand like your other stacks
+    container_name: memos
+    restart: unless-stopped
+    ports:
+      - "5230:5230"
+    volumes:
+      - ./data:/var/opt/memos      # DB + attachments live here
+    environment:
+      MEMOS_PORT: 5230
+      MEMOS_DRIVER: sqlite
+      # Pick ONE (see step 3):
+#      MEMOS_INSTANCE_URL: http://<LAN_IP>:5230
+      MEMOS_INSTANCE_URL: https://<redacted-domain>
