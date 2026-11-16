@@ -12,7 +12,7 @@
 
 Stack notes: [`stacks/wazuh/`](https://github.com/shineori/homelab/tree/main/stacks/wazuh)
 
-> 🧭 **Where this is at (2026-11-16):** the server stack is up, all three default passwords are changed, and two agents (the NAS and my Windows PC) are enrolled and showing as active. Still to do: feed in my existing [auditd](security-monitoring.md) logs, then attack my own lab and write detection rules and incident reports. I only claim a skill here once the matching step is actually done.
+> 🧭 **Where this is at (2026-11-16):** the server stack is up, all three default passwords are changed, two agents (the NAS and my Windows PC) are enrolled and showing as active, and my existing [auditd](security-monitoring.md) events from the NAS now arrive as Wazuh alerts. Still to do: attack my own lab, find the alerts, and write detection rules and incident reports. I only claim a skill here once the matching step is actually done.
 
 ## Why I run it
 
@@ -83,6 +83,15 @@ The journey of one log: something happens on the NAS, the agent ships it, the ma
 5. Hold the version: `echo "wazuh-agent hold" | sudo dpkg --set-selections`
 6. Verify from the server: `docker exec single-node-wazuh.manager-1 /var/ossec/bin/agent_control -l`
 
+**Feeding in auditd (ShiNAS agent + manager)**
+
+My audit rules are locked (`-e 2`), so the goal was to change nothing on the auditd side. auditd keeps writing its log and my Discord alerts keep firing. Wazuh just reads the same file.
+
+1. The agent needs a `localfile` block with `log_format` set to `audit`, pointing at `/var/log/audit/audit.log`. That format stitches a multi-line audit event back into one event.
+2. The manager needs to know my rule keys. Audit events all look alike, so Wazuh uses each rule's key plus a lookup list to tell a write from an execute. The list only ships with Wazuh's example keys, so I added mine to `/var/ossec/etc/lists/audit-keys` as `key:type` lines: `identity`, `auth_log`, `sshd_config`, `cron_changes` and `sudoers` as `write`, and `priv_esc` as `execute`.
+3. Restart the manager so it rebuilds the list.
+4. Test: run a `sudo` command on the NAS. Within seconds the manager logged rule 80789, "Audit: Watch - Execute access: /usr/bin/sudo", with my `priv_esc` key, the user, the terminal and the exact command.
+
 ## Troubleshooting log
 
 | Date | Problem | Root cause | Fix |
@@ -97,7 +106,8 @@ The journey of one log: something happens on the NAS, the agent ships it, the ma
 
 - [x] Confirm the NAS agent shows as active (done 2026-11-16)
 - [x] Add the Windows PC as a second agent (done 2026-11-16, I set this one up on my own)
-- [ ] Feed my existing [auditd](security-monitoring.md) log into Wazuh, so those kernel-level events get rules and history too
+- [x] Feed my existing [auditd](security-monitoring.md) log into Wazuh, so those kernel-level events get rules and history too (done 2026-11-16)
+- [ ] Decide what to do about `priv_esc` noise: it alerts on every `sudo`, including my own routine admin work
 - [ ] Move the passwords out of the compose file into a `.env` file or Docker secrets
 - [ ] Stop publishing the indexer API (9200) and manager API (55000) on every address. Agents only need 1514 and 1515
 - [ ] Set an index retention policy, so alerts can't slowly fill the disk
