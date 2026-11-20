@@ -71,6 +71,7 @@ nav:
           - "NextExplorer": services/nextexplorer.md
           - "MailFlow": services/mailflow.md
           - "Docmost": services/docmost.md
+          - "Monica": services/monica.md
           - "Playnite": services/playnite.md
       - Game servers:
           - "Terraria (tModLoader)": services/terraria.md

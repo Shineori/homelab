@@ -98,6 +98,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [NextExplorer](docs/services/nextexplorer.md) | ShineoriServer | ⏸️ | Web file explorer across the laptop and the NAS (LAN only) |
 | [MailFlow](docs/services/mailflow.md) | ShineoriServer | 🟢 | Unified webmail for all my accounts, audited and hardened (LAN only) |
 | [Docmost](docs/services/docmost.md) | ShineoriServer | 🟢 | Self-hosted wiki with real-time editing (Notion/Confluence-style), invite-only |
+| [Monica](docs/services/monica.md) | ShineoriServer | 🟢 | Personal CRM: birthdays, notes and reminders about the people in my life |
 | [Playnite](docs/services/playnite.md) | Windows PC | 🟢 | One game library for store launchers and emulators |
 
 ### Game servers
