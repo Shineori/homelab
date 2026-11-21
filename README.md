@@ -72,6 +72,7 @@ Full write-ups with architecture, security decisions, troubleshooting and lesson
 | [Diun](docs/services/diun.md) | ShiNAS + ShineoriServer | 🟢 | Watches every container image and pings Discord when a new stable version ships |
 | [Uptime Kuma](docs/services/uptime-kuma.md) | ShineoriServer | 🟢 | Uptime monitoring and alerts for every service |
 | [Dozzle](docs/services/dozzle.md) | ShineoriServer + ShiNAS agent | 🟢 | Live container logs from both servers on one page, logs only (behind Cloudflare Access and Authentik) |
+| [Portainer](docs/services/portainer.md) | ShineoriServer + ShiNAS agent | 🟢 | Manage containers on both servers from one web UI (LAN + Tailscale only, agent locked with a shared secret) |
 
 ### Media
 

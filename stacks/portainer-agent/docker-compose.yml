@@ -1,0 +1,17 @@
+# Portainer agent on ShiNAS: lets Portainer on ShineoriServer manage this host's containers.
+# Bound to the LAN IP only. .env holds AGENT_SECRET (same value as the server); never commit it.
+services:
+  portainer-agent:
+    image: portainer/agent:2.45.4
+    container_name: portainer-agent
+    restart: unless-stopped
+    ports:
+      - "<LAN_IP>:9001:9001"
+    env_file: .env   # AGENT_SECRET=<64 hex chars>, must match Portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # This NAS keeps Docker's data in /volume1/@docker, not /var/lib/docker.
+      # Check yours with: docker info --format '{{.DockerRootDir}}'
+      - /volume1/@docker/volumes:/var/lib/docker/volumes
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,17 @@
+# Portainer CE on ShineoriServer: one web UI to manage containers on both servers.
+# HTTPS UI only (self-signed cert), LAN + Tailscale. Never published through Cloudflare.
+# .env holds AGENT_SECRET (shared with the agent on ShiNAS); never commit it.
+services:
+  portainer:
+    image: portainer/portainer-ce:2.45.4
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      # 9000 (plain HTTP) and 8000 (Edge agents) are intentionally not published
+      - "9443:9443"
+    env_file: .env   # AGENT_SECRET=<64 hex chars>, must match the agent
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+    security_opt:
+      - no-new-privileges:true
